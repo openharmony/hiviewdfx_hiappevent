@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 #include "app_event_util.h"
+#include "application_context.h"
+#include "bundle_mgr_client.h"
 #include "event_json_util.h"
 #include "hilog/log.h"
 #include "hisysevent_c.h"
@@ -29,6 +31,9 @@
 namespace OHOS {
 namespace HiviewDFX {
 namespace AppEventUtil {
+
+constexpr int MIN_APP_UID = 20000;
+using namespace OHOS::AppExecFwk;
 
 bool IsBetaVersion()
 {
@@ -85,6 +90,28 @@ void ReportAppEventReceive(const std::vector<std::shared_ptr<AppEventPack>>& app
             HILOG_WARN(LOG_CORE, "fail to report APP_EVENT_RECEIVE event, ret =%{public}d", ret);
         }
     }
+}
+
+void GetApplicationInfo(std::string& bundleName, std::string& appVersion, std::string& runningId)
+{
+    if (getuid() < MIN_APP_UID) {
+        HILOG_INFO(LOG_CORE, "The uid is not application UID");
+        return;
+    }
+    std::shared_ptr<OHOS::AbilityRuntime::ApplicationContext> context =
+        OHOS::AbilityRuntime::Context::GetApplicationContext();
+    if (context == nullptr || (bundleName = context->GetBundleName()).empty()) {
+        HILOG_ERROR(LOG_CORE, "The context is null or the bundleName is empty");
+        return;
+    }
+    runningId = context->GetAppRunningUniqueId();
+    AppExecFwk::BundleInfo info;
+    AppExecFwk::BundleMgrClient client;
+    if (!client.GetBundleInfo(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT, info, Constants::ALL_USERID)) {
+        HILOG_WARN(LOG_CORE, "Failed to query BundleInfo from bms, bundle: %{public}s", bundleName.c_str());
+        return;
+    }
+    appVersion = info.versionName;
 }
 } // namespace AppEventUtil
 } // namespace HiviewDFX
