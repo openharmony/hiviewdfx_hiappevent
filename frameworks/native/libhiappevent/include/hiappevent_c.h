@@ -50,6 +50,8 @@ void ClearData();
 HiAppEvent_Config* HiAppEventCreateConfig();
 int HiAppEventSetConfigItem(HiAppEvent_Config* config, const char* itemName, const char* itemValue);
 int HiAppEventSetEventConfig(const char* name, HiAppEvent_Config* config);
+int HiAppEventReportFrameworkMemAnomaly(
+    enum OH_HiAppEvent_FrameworkType frameworkType, const char* frameworkVersion, const char* description);
 void HiAppEventDestroyConfig(HiAppEvent_Config* config);
 #ifdef __cplusplus
 }
