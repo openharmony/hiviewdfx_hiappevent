@@ -17,7 +17,9 @@
 #include <cerrno>
 #include <hilog/log.h>
 #include "event_policy_utils.h"
+#include "file_util.h"
 #include "hiappevent_base.h"
+#include "storage_acl.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002D07
@@ -29,11 +31,14 @@ namespace OHOS {
 namespace HiviewDFX {
 namespace {
 constexpr uint32_t MAX_CUTOFF_SZ_BYTES = 5 * 1024 * 1024; // 5M: 5242880
+const std::string OS_LOG_PATH = "/data/storage/el2/log/hiappevent";
+const std::string DMP_LOG_CONFIG_NAME = "minidump_config.txt";
 enum CrashLogConfigType : uint8_t {
     EXTEND_PC_LR_PRINTING = 0,
     LOG_FILE_CUTOFF_SZ_BYTES,
     SIMPLIFY_VMA_PRINTING,
     MERGE_CPPCRASH_APP_LOG,
+    COLLECT_MINIDUMP
 };
 struct crashConfig {
     uint8_t type;
@@ -66,6 +71,39 @@ bool ChangeCrashConfigToBoolValue(const std::string& strValue, uint32_t& out)
     } else if (strValue == "false") {
         out = 0;
         return true;
+    }
+    HILOG_ERROR(LOG_CORE, "Set crash config item failed, the value(%{public}s) should be bool type.", strValue.c_str());
+    return false;
+}
+
+bool SetDmpConfig(const std::string& path, const std::string& content)
+{
+    bool ret = FileUtil::SaveStringToFile(path, content, true);
+    if (ret) {
+        if (OHOS::StorageDaemon::AclSetAccess(path, "u:1201:r") != 0) {
+            HILOG_ERROR(LOG_CORE, "failed to set acl access dir=%{public}s", path.c_str());
+            return false;
+        }
+    }
+    return ret;
+}
+
+bool ChangeCrashConfigToBoolValueAndSetConfigFile(const std::string& strValue, uint32_t& out)
+{
+    std::string realPath;
+    if (!FileUtil::PathToRealPath(OS_LOG_PATH, realPath)) {
+        HILOG_ERROR(LOG_CORE, "OS_LOG_PATH Path to realPath failed.");
+        return false;
+    }
+    std::string path = realPath + "/" + DMP_LOG_CONFIG_NAME;
+    std::string falseContent = "{collectMinidump:false}";
+    std::string trueContent = "{collectMinidump:true}";
+    if (strValue == "true") {
+        out = 1;
+        return SetDmpConfig(path, trueContent);
+    } else if (strValue == "false") {
+        out = 0;
+        return SetDmpConfig(path, falseContent);
     }
     HILOG_ERROR(LOG_CORE, "Set crash config item failed, the value(%{public}s) should be bool type.", strValue.c_str());
     return false;
@@ -106,7 +144,9 @@ int AppCrashPolicy::SetAppCrashLogPolicy(const std::map<std::string, std::string
         {"log_file_cutoff_sz_bytes", {.type = LOG_FILE_CUTOFF_SZ_BYTES, .func = ChangeCrashConfigToUIntValue}},
         {"simplifyVmaPrinting", {.type = SIMPLIFY_VMA_PRINTING, .func = ChangeCrashConfigToBoolValue}},
         {"simplify_vma_printing", {.type = SIMPLIFY_VMA_PRINTING, .func = ChangeCrashConfigToBoolValue}},
-        {"merge_cppcrash_app_log", {.type = MERGE_CPPCRASH_APP_LOG, .func = ChangeCrashConfigToBoolValue}}
+        {"merge_cppcrash_app_log", {.type = MERGE_CPPCRASH_APP_LOG, .func = ChangeCrashConfigToBoolValue}},
+        {"collectMinidump", {.type = COLLECT_MINIDUMP, .func = ChangeCrashConfigToBoolValueAndSetConfigFile}},
+        {"collect_minidump", {.type = COLLECT_MINIDUMP, .func = ChangeCrashConfigToBoolValueAndSetConfigFile}}
     };
     std::map<uint8_t, uint32_t> crashConfigMap;
     uint32_t configValue = 0;

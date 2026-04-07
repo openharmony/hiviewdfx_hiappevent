@@ -652,7 +652,7 @@ int OH_HiAppEvent_SetReportRoute(HiAppEvent_Processor* processor, const char* ap
  *
  * @param processor The pointer to the HiAppEvent_Processor instance.
  * @param periodReport The time interval to report.
- * @param batchReport The threthold to report.
+ * @param batchReport The threshold to report.
  * @param onStartReport The strategy to report.
  * @param onBackgroundReport The strategy to report.
  * @return set result.
