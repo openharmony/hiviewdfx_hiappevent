@@ -148,6 +148,7 @@ export default namespace hiAppEvent {
         extendPcLrPrinting?: boolean;
         logFileCutoffSzBytes?: int;
         simplifyVmaPrinting?: boolean;
+        collectMinidump?: boolean;
     }
 
     export interface AppFreezePolicy {

@@ -18,6 +18,7 @@
 
 #include "app_event_watcher.h"
 #include "application_context.h"
+#include "directory_ex.h"
 #include "file_util.h"
 #include "hiappevent_config.h"
 #include "os_event_listener.h"
