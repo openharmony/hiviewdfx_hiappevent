@@ -73,6 +73,15 @@
               "header_base": "//base/hiviewdfx/hiappevent/frameworks/cj/ffi/include",
               "header_files": []
           }
+        },
+        {
+          "name": "//base/hiviewdfx/hiappevent/frameworks/native/ndk:hiappevent_ndk",
+          "header": {
+              "header_base": "//base/hiviewdfx/hiappevent/interfaces/native/kits/include",
+              "header_files": [
+                  "hiappevent/hiappevent.h"
+              ]
+          }
         }
       ],
       "test": [ "//base/hiviewdfx/hiappevent/test:unittest" ]
