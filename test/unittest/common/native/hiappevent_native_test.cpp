@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "application_context.h"
+#include "directory_ex.h"
 #include "file_util.h"
 #include "hiappevent/hiappevent.h"
 #include "hiappevent_base.h"
