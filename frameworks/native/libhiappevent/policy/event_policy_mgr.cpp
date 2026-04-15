@@ -36,14 +36,26 @@
 namespace OHOS {
 namespace HiviewDFX {
 namespace {
-const std::string OS_LOG_PATH = "/data/storage/el2/log/hiappevent";
+const std::string OS_INFO_PATH = "/data/storage/el2/log/hiappevent/info";
 const std::string DMP_LOG_CONFIG_NAME = "minidump_config.txt";
 const std::string DMP_CONFIG_FALSE = "{collectMinidump:false}";
+bool InitDir(const std::string& dirPath)
+{
+    if (!FileUtil::IsFileExists(dirPath) && !FileUtil::ForceCreateDirectory(dirPath)) {
+        HILOG_ERROR(LOG_CORE, "failed to create dir=%{public}s", dirPath.c_str());
+        return false;
+    }
+    if (OHOS::StorageDaemon::AclSetAccess(dirPath, "u:1201:rwx") != 0) {
+        HILOG_ERROR(LOG_CORE, "failed to set acl access dir=%{public}s", dirPath.c_str());
+        return false;
+    }
+    return true;
+}
 void InitMiniDumpConfig()
 {
     std::string realPath;
-    if (!FileUtil::PathToRealPath(OS_LOG_PATH, realPath)) {
-        HILOG_ERROR(LOG_CORE, "OS_LOG_PATH real fullPath failed.");
+    if (!FileUtil::PathToRealPath(OS_INFO_PATH, realPath)) {
+        HILOG_ERROR(LOG_CORE, "OS_INFO_PATH real fullPath failed.");
         return;
     }
     std::string path = realPath + "/" + DMP_LOG_CONFIG_NAME;
@@ -61,7 +73,9 @@ void InitMiniDumpConfig()
 EventPolicyMgr::EventPolicyMgr()
 {
     InitializePolicies();
-    InitMiniDumpConfig();
+    if (InitDir(OS_INFO_PATH)) {
+        InitMiniDumpConfig();
+    }
 }
 
 void EventPolicyMgr::InitializePolicies()
