@@ -31,8 +31,10 @@ namespace OHOS {
 namespace HiviewDFX {
 namespace {
 constexpr uint32_t MAX_CUTOFF_SZ_BYTES = 5 * 1024 * 1024; // 5M: 5242880
-const std::string OS_LOG_PATH = "/data/storage/el2/log/hiappevent";
+const std::string OS_INFO_PATH = "/data/storage/el2/log/hiappevent/info";
 const std::string DMP_LOG_CONFIG_NAME = "minidump_config.txt";
+const std::string DMP_CONFIG_FALSE = "{collectMinidump:false}";
+const std::string DMP_CONFIG_TRUE = "{collectMinidump:true}";
 enum CrashLogConfigType : uint8_t {
     EXTEND_PC_LR_PRINTING = 0,
     LOG_FILE_CUTOFF_SZ_BYTES,
@@ -76,9 +78,25 @@ bool ChangeCrashConfigToBoolValue(const std::string& strValue, uint32_t& out)
     return false;
 }
 
-bool SetDmpConfig(const std::string& path, const std::string& content)
+bool SetMinidumpConfig(const std::string& strValue, uint32_t& out)
 {
-    bool ret = FileUtil::SaveStringToFile(path, content, true);
+    std::string realPath;
+    if (!FileUtil::PathToRealPath(OS_INFO_PATH, realPath)) {
+        HILOG_ERROR(LOG_CORE, "OS_INFO_PATH Path to realPath failed.");
+        return false;
+    }
+    std::string path = realPath + "/" + DMP_LOG_CONFIG_NAME;
+    if (ChangeCrashConfigToBoolValue(strValue, out) == false) {
+        HILOG_ERROR(LOG_CORE, "failed to set crash config item, the value(%{public}s) should be bool type.",
+            strValue.c_str());
+        return false;
+    }
+    bool ret = false;
+    if (out == 1) {
+        ret = FileUtil::SaveStringToFile(path, DMP_CONFIG_TRUE, true);
+    } else if (out == 0) {
+        ret = FileUtil::SaveStringToFile(path, DMP_CONFIG_FALSE, true);
+    }
     if (ret) {
         if (OHOS::StorageDaemon::AclSetAccess(path, "u:1201:r") != 0) {
             HILOG_ERROR(LOG_CORE, "failed to set acl access dir=%{public}s", path.c_str());
@@ -86,27 +104,6 @@ bool SetDmpConfig(const std::string& path, const std::string& content)
         }
     }
     return ret;
-}
-
-bool ChangeCrashConfigToBoolValueAndSetConfigFile(const std::string& strValue, uint32_t& out)
-{
-    std::string realPath;
-    if (!FileUtil::PathToRealPath(OS_LOG_PATH, realPath)) {
-        HILOG_ERROR(LOG_CORE, "OS_LOG_PATH Path to realPath failed.");
-        return false;
-    }
-    std::string path = realPath + "/" + DMP_LOG_CONFIG_NAME;
-    std::string falseContent = "{collectMinidump:false}";
-    std::string trueContent = "{collectMinidump:true}";
-    if (strValue == "true") {
-        out = 1;
-        return SetDmpConfig(path, trueContent);
-    } else if (strValue == "false") {
-        out = 0;
-        return SetDmpConfig(path, falseContent);
-    }
-    HILOG_ERROR(LOG_CORE, "Set crash config item failed, the value(%{public}s) should be bool type.", strValue.c_str());
-    return false;
 }
 }
 
@@ -145,25 +142,26 @@ int AppCrashPolicy::SetAppCrashLogPolicy(const std::map<std::string, std::string
         {"simplifyVmaPrinting", {.type = SIMPLIFY_VMA_PRINTING, .func = ChangeCrashConfigToBoolValue}},
         {"simplify_vma_printing", {.type = SIMPLIFY_VMA_PRINTING, .func = ChangeCrashConfigToBoolValue}},
         {"merge_cppcrash_app_log", {.type = MERGE_CPPCRASH_APP_LOG, .func = ChangeCrashConfigToBoolValue}},
-        {"collectMinidump", {.type = COLLECT_MINIDUMP, .func = ChangeCrashConfigToBoolValueAndSetConfigFile}},
-        {"collect_minidump", {.type = COLLECT_MINIDUMP, .func = ChangeCrashConfigToBoolValueAndSetConfigFile}}
+        {"collectMinidump", {.type = COLLECT_MINIDUMP, .func = SetMinidumpConfig}},
+        {"collect_minidump", {.type = COLLECT_MINIDUMP, .func = SetMinidumpConfig}}
     };
     std::map<uint8_t, uint32_t> crashConfigMap;
     uint32_t configValue = 0;
     for (const auto& [key, value] : configMap) {
         auto it = crashConfigs.find(key);
         if (it == crashConfigs.end()) {
-            HILOG_WARN(LOG_CORE, "Set crash config item failed, the item(%{public}s) is invalid.", key.c_str());
+            HILOG_WARN(LOG_CORE, "failed to set crash config item, the item(%{public}s) is invalid.", key.c_str());
             continue;
         }
         if ((it->second.func)(value, configValue)) {
             crashConfigMap[it->second.type] = configValue;
         } else {
-            HILOG_WARN(LOG_CORE, "Set crash config item failed, the value(%{public}s) is invalid.", value.c_str());
+            HILOG_WARN(LOG_CORE, "failed to set crash config item. The value(%{public}s) is invalid or operation \
+                failed.", value.c_str());
         }
     }
     if (crashConfigMap.empty()) {
-        HILOG_ERROR(LOG_CORE, "Failed to set crash log config, name or value is invalid.");
+        HILOG_ERROR(LOG_CORE, "failed to set crash log config, name or value is invalid.");
         return ErrorCode::ERROR_INVALID_PARAM_VALUE;
     }
     return SetEventPolicy(crashConfigMap);
