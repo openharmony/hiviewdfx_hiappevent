@@ -280,8 +280,13 @@ std::shared_ptr<AppEventPack> OsEventListener::GetAppEventPackFromJson(const std
     }
  
     if (EventPolicyMgr::GetInstance().GetEventPageSwitchStatus(appEventPack->GetName())) {
+        uint64_t eventTime = EventJsonUtil::ParseUInt64(paramsJson, "time");
+        if (eventTime == 0) {
+            HILOG_WARN(LOG_CORE, "cur event has not time or the time is not uint64_t.");
+        }
+        bool isAppFreeze = appEventPack->GetName() == "APP_FREEZE";
         std::string pageSwitchLog;
-        (void)CreatePageSwitchSnapshot(pageSwitchLog);
+        (void)CreatePageSwitchSnapshot(eventTime, isAppFreeze, pageSwitchLog);
         paramsJson["page_switch_log"] = pageSwitchLog;
     }
     appEventPack->SetParamStr(Json::FastWriter().write(paramsJson));

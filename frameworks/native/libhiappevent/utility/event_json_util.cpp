@@ -17,6 +17,11 @@
 namespace OHOS {
 namespace HiviewDFX {
 namespace EventJsonUtil {
+uint64_t ParseUInt64(const Json::Value& root, const std::string& key)
+{
+    return (root.isMember(key) && root[key].isUInt64()) ? root[key].asUInt64() : 0;
+}
+
 uint32_t ParseUInt32(const Json::Value& root, const std::string& key)
 {
     return (root.isMember(key) && root[key].isUInt()) ? root[key].asUInt() : 0;
