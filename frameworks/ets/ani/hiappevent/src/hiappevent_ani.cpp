@@ -51,7 +51,8 @@ std::map<std::string, std::vector<std::string>> GetEventPolicyItem()
             {"foregroundLoadThreshold", "backgroundLoadThreshold", "threadLoadThreshold", "perfLogCaptureCount",
              "threadLoadInterval"}},
         {"appCrashPolicy",
-            {"pageSwitchLogEnable", "extendPcLrPrinting", "logFileCutoffSzBytes", "simplifyVmaPrinting"}},
+            {"pageSwitchLogEnable", "extendPcLrPrinting", "logFileCutoffSzBytes", "simplifyVmaPrinting",
+             "collectMinidump"}},
         {"appFreezePolicy", {"pageSwitchLogEnable"}},
         {"resourceOverlimitPolicy", {"pageSwitchLogEnable", "jsHeapLogtype"}},
         {"addressSanitizerPolicy", {"pageSwitchLogEnable"}}

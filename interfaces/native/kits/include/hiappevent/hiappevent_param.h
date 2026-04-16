@@ -151,6 +151,13 @@ extern "C" {
  */
 #define OH_APP_CRASH_PARAM_MERGE_CPPCRASH_APP_LOG "merge_cppcrash_app_log"
 
+/**
+ * @brief Enable collecting minidump log for cppcrash and return it via external_log in the APP_CRASH event
+ *
+ * @since 26.0.0
+ */
+#define OH_APP_CRASH_PARAM_COLLECT_MINIDUMP "collect_minidump"
+
 #ifdef __cplusplus
 }
 #endif

@@ -64,6 +64,7 @@ void InitEventMap(napi_env env, std::map<const char*, napi_value>& eventMap)
     eventMap["DISTRIBUTED_SERVICE_START"] = NapiUtil::CreateString(env, "hiappevent.distributed_service_start");
     eventMap["APP_CRASH"] = NapiUtil::CreateString(env, "APP_CRASH");
     eventMap["APP_FREEZE"] = NapiUtil::CreateString(env, "APP_FREEZE");
+    eventMap["appFreezeWarning"] = NapiUtil::CreateString(env, "APPFREEZE_WARNING");
     eventMap["APP_LAUNCH"] = NapiUtil::CreateString(env, "APP_LAUNCH");
     eventMap["SCROLL_JANK"] = NapiUtil::CreateString(env, "SCROLL_JANK");
     eventMap["CPU_USAGE_HIGH"] = NapiUtil::CreateString(env, "CPU_USAGE_HIGH");
