@@ -48,6 +48,10 @@ EventPolicyUtils& EventPolicyUtils::GetInstance()
 
 int EventPolicyUtils::ConfigPageSwitch(const std::string& key, std::map<std::string, std::string>& configMap)
 {
+    if (configMap.empty()) {
+        HILOG_WARN(LOG_CORE, "the configMap is empty when config page switch %{public}s.", key.c_str());
+        return ErrorCode::HIAPPEVENT_VERIFY_SUCCESSFUL;
+    }
     auto value = configMap.find(PAGE_SWITCH_CONFIG);
     if (value == configMap.end()) {
         HILOG_ERROR(LOG_CORE, "pageSwitchLogEnable param does not exist.");

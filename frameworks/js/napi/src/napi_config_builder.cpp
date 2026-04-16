@@ -128,7 +128,7 @@ std::unique_ptr<EventConfigPack> NapiConfigBuilder::BuildEventConfig(const napi_
     size_t len)
 {
     if (len < CONFIG_PARAM_NUM) {
-        NapiUtil::ThrowError(env, NapiError::ERR_PARAM, NapiUtil::CreateErrMsg("setEventParam"));
+        NapiUtil::ThrowError(env, NapiError::ERR_PARAM, NapiUtil::CreateErrMsg("setEventConfig"));
         return nullptr;
     }
     if (!NapiUtil::IsString(env, params[INDEX_OF_NAME_CONFIG])) {
@@ -253,35 +253,6 @@ bool NapiConfigBuilder::GetPolicyConfig(const napi_env env, const std::string& n
         configMap[configKey] = NapiUtil::ConvertToString(env, configValue);
     }
     eventPolicyPack_->policyStringMaps[name] = std::move(configMap);
-    if (name == APP_CRASH_POLICY) {
-        return GetAppCrashPolicy();
-    }
-    return true;
-}
-
-bool NapiConfigBuilder::GetAppCrashPolicy()
-{
-    std::map<std::string, crashConfigVerify> crashConfigs = {
-        {"extendPcLrPrinting", {.type = 0, .func = VerifyCrashConfigBoolValue}},
-        {"logFileCutoffSzBytes", {.type = 1, .func = VerifyCrashConfigUIntValue}},
-        {"simplifyVmaPrinting", {.type = 2, .func = VerifyCrashConfigBoolValue}}
-    };
-
-    uint32_t configValue = 0;
-    std::map<uint8_t, uint32_t> uintMap;
-    for (const auto& cfg : eventPolicyPack_->policyStringMaps[APP_CRASH_POLICY]) {
-        auto it = crashConfigs.find(cfg.first);
-        if (it == crashConfigs.end()) {
-            continue;
-        }
-
-        if (!(it->second.func)(cfg.second, configValue)) {
-            return false;
-        }
-        uintMap[it->second.type] = configValue;
-        eventPolicyPack_->policyStringMaps[APP_CRASH_POLICY].erase(cfg.first);
-    }
-    eventPolicyPack_->policyUintMaps[APP_CRASH_POLICY] = std::move(uintMap);
     return true;
 }
 } // namespace HiviewDFX

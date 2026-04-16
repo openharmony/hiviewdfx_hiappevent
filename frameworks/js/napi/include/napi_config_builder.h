@@ -45,7 +45,6 @@ public:
 
 private:
     void GetAppCrashConfig(const napi_env env, const napi_value params);
-    bool GetAppCrashPolicy();
     void GetCommonConfig(const napi_env env, const napi_value params);
     bool GetPolicyConfig(const napi_env env, const std::string& name, const napi_value policy);
 

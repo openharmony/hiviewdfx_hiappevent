@@ -219,7 +219,7 @@ HWTEST_F(HiAppEventPolicyTest, HiAppEventPolicyTest003_4, TestSize.Level0)
     EXPECT_EQ(result, ErrorCode::ERROR_INVALID_PARAM_VALUE);
     configMap = {};
     result = EventPolicyMgr::GetInstance().SetEventPolicy("appCrashPolicy", configMap);
-    EXPECT_EQ(result, ErrorCode::ERROR_INVALID_PARAM_VALUE);
+    EXPECT_EQ(result, ErrorCode::HIAPPEVENT_VERIFY_SUCCESSFUL);
 }
 
 /**
@@ -329,7 +329,7 @@ HWTEST_F(HiAppEventPolicyTest, HiAppEventPolicyTest005_3, TestSize.Level0)
 
     configMap = {};
     result = EventPolicyMgr::GetInstance().SetEventPolicy("resourceOverlimitPolicy", configMap);
-    EXPECT_EQ(result, ErrorCode::ERROR_UNKNOWN);
+    EXPECT_EQ(result, ErrorCode::HIAPPEVENT_VERIFY_SUCCESSFUL);
 }
 
 /**
