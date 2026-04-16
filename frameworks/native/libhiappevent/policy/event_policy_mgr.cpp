@@ -22,8 +22,10 @@
 #include "app_crash_policy.h"
 #include "app_freeze_policy.h"
 #include "cpu_usage_high_policy.h"
+#include "file_util.h"
 #include "main_thread_jank_policy.h"
 #include "resource_overlimit_policy.h"
+#include "storage_acl.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002D07
@@ -33,9 +35,47 @@
 
 namespace OHOS {
 namespace HiviewDFX {
+namespace {
+const std::string OS_INFO_PATH = "/data/storage/el2/log/hiappevent/info";
+const std::string DMP_LOG_CONFIG_NAME = "minidump_config.txt";
+const std::string DMP_CONFIG_FALSE = "{collectMinidump:false}";
+bool InitDir(const std::string& dirPath)
+{
+    if (!FileUtil::IsFileExists(dirPath) && !FileUtil::ForceCreateDirectory(dirPath)) {
+        HILOG_ERROR(LOG_CORE, "failed to create dir=%{public}s", dirPath.c_str());
+        return false;
+    }
+    if (OHOS::StorageDaemon::AclSetAccess(dirPath, "u:1201:rwx") != 0) {
+        HILOG_ERROR(LOG_CORE, "failed to set acl access dir=%{public}s", dirPath.c_str());
+        return false;
+    }
+    return true;
+}
+void InitMiniDumpConfig()
+{
+    std::string realPath;
+    if (!FileUtil::PathToRealPath(OS_INFO_PATH, realPath)) {
+        HILOG_ERROR(LOG_CORE, "OS_INFO_PATH real fullPath failed.");
+        return;
+    }
+    std::string path = realPath + "/" + DMP_LOG_CONFIG_NAME;
+    bool ret = FileUtil::SaveStringToFile(path, DMP_CONFIG_FALSE, true);
+    if (ret == false) {
+        HILOG_ERROR(LOG_CORE, "fail to init collectMinidump configuration.");
+        return;
+    }
+    if (OHOS::StorageDaemon::AclSetAccess(path, "u:1201:r") != 0) {
+        HILOG_ERROR(LOG_CORE, "failed to set acl access dir=%{public}s", path.c_str());
+    }
+}
+}
+
 EventPolicyMgr::EventPolicyMgr()
 {
     InitializePolicies();
+    if (InitDir(OS_INFO_PATH)) {
+        InitMiniDumpConfig();
+    }
 }
 
 void EventPolicyMgr::InitializePolicies()

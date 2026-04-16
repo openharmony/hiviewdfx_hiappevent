@@ -59,7 +59,9 @@ std::map<std::string, std::map<std::string, napi_valuetype>> GetEventPolicyItem(
         }},
         {"appCrashPolicy", {
             {"pageSwitchLogEnable", napi_boolean}, {"extendPcLrPrinting", napi_boolean},
-            {"logFileCutoffSzBytes", napi_number}, {"simplifyVmaPrinting", napi_boolean}}},
+            {"logFileCutoffSzBytes", napi_number}, {"simplifyVmaPrinting", napi_boolean},
+            {"collectMinidump", napi_boolean}
+        }},
         {"appFreezePolicy", {{"pageSwitchLogEnable", napi_boolean}}},
         {"resourceOverlimitPolicy", {{"pageSwitchLogEnable", napi_boolean}, {"jsHeapLogtype", napi_string}}},
         {"addressSanitizerPolicy", {{"pageSwitchLogEnable", napi_boolean}}},
@@ -165,7 +167,8 @@ void NapiConfigBuilder::GetAppCrashConfig(const napi_env env, const napi_value p
     std::map<std::string, crashConfig> crashConfigs = {
         {"extend_pc_lr_printing", {.type = 0, .func = GetCrashConfigBoolValue}},
         {"log_file_cutoff_sz_bytes", {.type = 1, .func = GetCrashConfigUIntValue}},
-        {"simplify_vma_printing", {.type = 2, .func = GetCrashConfigBoolValue}}
+        {"simplify_vma_printing", {.type = 2, .func = GetCrashConfigBoolValue}},
+        {"collectMinidump", {.type = 4, .func = GetCrashConfigBoolValue}}
     };
 
     uint32_t configValue = 0;
