@@ -258,7 +258,7 @@ ani_object HiAppEventAni::ConfigEventPolicySync(ani_env *env, ani_object policy)
         if (setResult != ErrorCode::HIAPPEVENT_VERIFY_SUCCESSFUL) {
             HILOG_ERROR(LOG_CORE, "Failed to config event(%{public}s) policy, ret=%{public}d", configMap.first.c_str(),
                 setResult);
-            rtn =  HiAppEventAniUtil::Result(env, HiAppEventAniUtil::BuildErrorByResult(setResult));
+            rtn =  HiAppEventAniUtil::Result(env, {-1, "ErrMsg not found."});
         }
     }
     return rtn;

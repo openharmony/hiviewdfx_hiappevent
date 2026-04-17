@@ -959,6 +959,63 @@ describe('HiAppEventJsTest', function () {
     });
 
     /**
+     * @tc.name: ConfigEventPolicyTest018_6
+     * @tc.desc: Test the ConfigEventPolicy interface for appcrash
+     * @tc.type: FUNC
+     * @tc.require: issueI8U2VO
+     */
+    it('ConfigEventPolicyTest018_6', 0, async function (done) {
+        console.info('ConfigEventPolicyTest018_6 start');
+        let policy = { "appCrashPolicy": { "logFileCutoffSzBytes": 102400 } };
+        hiAppEvent.configEventPolicy(policy).then(() => {
+            expect(true).assertEqual(true);
+            done();
+        }).catch(() => {
+            expect(false).assertEqual(true);
+            done();
+        });
+        console.info('ConfigEventPolicyTest018_6 end');
+    });
+
+    /**
+     * @tc.name: ConfigEventPolicyTest018_7
+     * @tc.desc: Test the ConfigEventPolicy interface for appcrash
+     * @tc.type: FUNC
+     * @tc.require: issueI8U2VO
+     */
+    it('ConfigEventPolicyTest018_7', 0, async function (done) {
+        console.info('ConfigEventPolicyTest018_7 start');
+        let policy = { "appCrashPolicy": { "extendPcLrPrinting": true } };
+        hiAppEvent.configEventPolicy(policy).then(() => {
+            expect(true).assertEqual(true);
+            done();
+        }).catch(() => {
+            expect(false).assertEqual(true);
+            done();
+        });
+        console.info('ConfigEventPolicyTest018_7 end');
+    });
+
+    /**
+     * @tc.name: ConfigEventPolicyTest018_8
+     * @tc.desc: Test the ConfigEventPolicy interface for appcrash
+     * @tc.type: FUNC
+     * @tc.require: issueI8U2VO
+     */
+    it('ConfigEventPolicyTest018_8', 0, async function (done) {
+        console.info('ConfigEventPolicyTest018_8 start');
+        let policy = { "appCrashPolicy": { "simplifyVmaPrinting": true } };
+        hiAppEvent.configEventPolicy(policy).then(() => {
+            expect(true).assertEqual(true);
+            done();
+        }).catch(() => {
+            expect(false).assertEqual(true);
+            done();
+        });
+        console.info('ConfigEventPolicyTest018_8 end');
+    });
+
+    /**
      * @tc.name: ConfigEventPolicyTest019
      * @tc.desc: Test the ConfigEventPolicy interface for appFreeze
      * @tc.type: FUNC

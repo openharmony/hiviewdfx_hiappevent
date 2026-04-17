@@ -134,6 +134,10 @@ int AppCrashPolicy::SetEventPolicy(const std::map<uint8_t, uint32_t> &configMap)
 
 int AppCrashPolicy::SetAppCrashLogPolicy(const std::map<std::string, std::string>& configMap)
 {
+    if (configMap.empty()) {
+        HILOG_WARN(LOG_CORE, "the app crash policy is empty.");
+        return ErrorCode::HIAPPEVENT_VERIFY_SUCCESSFUL;
+    }
     std::map<std::string, crashConfig> crashConfigs = {
         {"extendPcLrPrinting", {.type = EXTEND_PC_LR_PRINTING, .func = ChangeCrashConfigToBoolValue}},
         {"extend_pc_lr_printing", {.type = EXTEND_PC_LR_PRINTING, .func = ChangeCrashConfigToBoolValue}},
