@@ -76,6 +76,10 @@ int SetEventConfig(const std::map<std::string, std::string>& configMap)
 
 int ResourceOverlimitPolicy::SetEventPolicy(const std::map<std::string, std::string>& configMap)
 {
+    if (configMap.empty()) {
+        HILOG_WARN(LOG_CORE, "the resource overlimit policy config is empty.");
+        return ErrorCode::HIAPPEVENT_VERIFY_SUCCESSFUL;
+    }
     auto conf = configMap;
     int res = EventPolicyUtils::GetInstance().ConfigPageSwitch("resoupageSwitchLogEnable", conf);
     if (conf.size() < configMap.size()) {  // whether pageSwitchLogEnable is set.
