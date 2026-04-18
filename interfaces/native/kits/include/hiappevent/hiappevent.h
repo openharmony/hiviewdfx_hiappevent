@@ -108,7 +108,12 @@ typedef enum {
     /** @error Operate failed */
     HIAPPEVENT_OPERATE_FAILED = -100,
     /** @error Invalid uid */
-    HIAPPEVENT_INVALID_UID = -200
+    HIAPPEVENT_INVALID_UID = -200,
+    /**
+     * @error Report frequency exceeded.
+     * @since 26.0.0
+     */
+    HIAPPEVENT_REPORT_FREQUENCY_EXCEEDED = -300
 } HiAppEvent_ErrorCode;
 
 /**
@@ -835,6 +840,52 @@ int OH_HiAppEvent_SetConfigItem(HiAppEvent_Config* config, const char* itemName,
  * @since 15
  */
 int OH_HiAppEvent_SetEventConfig(const char* name, HiAppEvent_Config* config);
+
+/**
+ * @brief Framework types.
+ *
+ * You are advised to select framework types based on their respective usage scenarios.
+ *
+ * @since 26.0.0
+ */
+typedef enum OH_HiAppEvent_FrameworkType {
+    /**
+     * Flutter_dart type.
+     *
+     * @since 26.0.0
+     */
+    OH_FLUTTER_DART,
+
+    /**
+     * React_native_hermes type.
+     *
+     * @since 26.0.0
+     */
+    OH_REACT_NATIVE_HERMES,
+
+    /**
+     * Kmp_kotlin type.
+     *
+     * @since 26.0.0
+     */
+    OH_KMP_KOTLIN
+} OH_HiAppEvent_FrameworkType;
+
+/**
+ * @brief When a framework has a memory leak report event.
+ *
+ * @param frameworkType Framework type.
+ * @param frameworkVersion Framework version.
+ * @param description Description of the framework memory leak event.
+ * @return report result.
+ *     {@link HIAPPEVENT_SUCCESS} The operation is successful.
+ *     {@link HIAPPEVENT_INVALID_PARAM_VALUE} Invalid Param value.
+ *     {@link HIAPPEVENT_OPERATE_FAILED} System/application event write failed, or timestamp retrieval failed.
+ *     {@link HIAPPEVENT_REPORT_FREQUENCY_EXCEEDED} Report frequency exceeded.
+ * @since 26.0.0
+ */
+int OH_HiAppEvent_ReportFrameworkMemAnomaly(
+    enum OH_HiAppEvent_FrameworkType frameworkType, const char* frameworkVersion, const char* description);
 #ifdef __cplusplus
 }
 #endif

@@ -15,9 +15,12 @@
 
 #include "hiappevent_c.h"
 
+#include <atomic>
+#include <cinttypes>
 #include <memory>
 #include <vector>
 
+#include "app_event_util.h"
 #include "event_policy_mgr.h"
 #include "hiappevent_base.h"
 #include "hiappevent_clean.h"
@@ -25,6 +28,8 @@
 #include "hiappevent_verify.h"
 #include "hiappevent_write.h"
 #include "hilog/log.h"
+#include "hisysevent_c.h"
+#include "time_util.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002D07
@@ -37,6 +42,10 @@ using namespace OHOS::HiviewDFX;
 namespace {
 constexpr int MAX_SIZE_OF_LIST_PARAM = 100;
 constexpr size_t MAX_LENGTH_OF_CUSTOM_CONFIG_VALUE = 1024;
+constexpr const char* const FW_DOMAIN = "HIVIEWDFX";
+constexpr const char* const FW_EVT_NAME = "FW_MEM_ANOMALY";
+constexpr int64_t ONE_MINUTE = 1000 * 60;
+const size_t MAX_FWK_VER_SIZE = 128;
 
 template<typename T>
 ParamList AddParamValue(ParamList list, const char* name, T value)
@@ -61,6 +70,55 @@ ParamList AddParamArrayValue(ParamList list, const char* name, const T* arr, int
     auto ndkAppEventPackPtr = reinterpret_cast<AppEventPack *>(list);
     ndkAppEventPackPtr->AddParam(name, params);
     return reinterpret_cast<ParamList>(ndkAppEventPackPtr);
+}
+
+const std::map<int, std::string>& GetFrameworkTypes()
+{
+    static const std::map<int, std::string>& frameworkTypeMaps = {
+        {0, "OH_FLUTTER_DART"},
+        {1, "OH_REACT_NATIVE_HERMES"},
+        {2, "OH_KMP_KOTLIN"}
+    };
+    return frameworkTypeMaps;
+}
+
+void TruncateString(const char* src, std::string& destStr)
+{
+    destStr = src ? std::string(src, MAX_FWK_VER_SIZE) : "";
+}
+
+int HiSysEventWriteFrameworkMemAnomaly(enum OH_HiAppEvent_FrameworkType frameworkType, std::string& frameworkVersionStr)
+{
+    std::string bundleName;
+    std::string appVersion;
+    std::string runningId;
+    AppEventUtil::GetApplicationInfo(bundleName, appVersion, runningId);
+    HiSysEventParam memAnomalyParams[] = {
+        { .name = "PROCESS_NAME",    .t = HISYSEVENT_STRING,    .arraySize = 0, },
+        { .name = "FW_TYPE",         .t = HISYSEVENT_STRING,    .arraySize = 0, },
+        { .name = "FW_VER",          .t = HISYSEVENT_STRING,    .arraySize = 0, },
+        { .name = "APP_VER",         .t = HISYSEVENT_STRING,    .arraySize = 0, },
+        { .name = "RUNNING_ID",      .t = HISYSEVENT_STRING,    .arraySize = 0, }
+    };
+    std::string fwkTypeStr;
+    auto& fwkTypeMaps = GetFrameworkTypes();
+    auto it = fwkTypeMaps.find(frameworkType);
+    if (it != fwkTypeMaps.end()) {
+        fwkTypeStr = it->second;
+    }
+    uint64_t index = 0;
+    memAnomalyParams[index++].v = { .s = const_cast<char *>(bundleName.c_str()) };
+    memAnomalyParams[index++].v = { .s = const_cast<char *>(fwkTypeStr.c_str()) };
+    memAnomalyParams[index++].v = { .s = const_cast<char *>(frameworkVersionStr.c_str()) };
+    memAnomalyParams[index++].v = { .s = const_cast<char *>(appVersion.c_str()) };
+    memAnomalyParams[index++].v = { .s = const_cast<char *>(runningId.c_str()) };
+    int ret = OH_HiSysEvent_Write("HIVIEWDFX", "FW_MEM_ANOMALY", HISYSEVENT_STATISTIC, memAnomalyParams,
+                                  sizeof(memAnomalyParams) / sizeof(memAnomalyParams[0]));
+    if (ret != 0) {
+        HILOG_WARN(LOG_CORE, "fail to report FW_MEM_ANOMALY event, ret =%{public}d", ret);
+        return HIAPPEVENT_OPERATE_FAILED;
+    }
+    return HIAPPEVENT_SUCCESS;
 }
 }
 
@@ -257,6 +315,45 @@ int HiAppEventSetEventConfig(const char* name, HiAppEvent_Config* config)
         return ErrorCode::ERROR_INVALID_PARAM_VALUE;
     }
     return res;
+}
+
+int HiAppEventReportFrameworkMemAnomaly(
+    enum OH_HiAppEvent_FrameworkType frameworkType, const char* frameworkVersion, const char* description)
+{
+    static std::atomic<int64_t> g_lastReportTime {0};
+    auto& fwkTypeMaps = GetFrameworkTypes();
+    if (fwkTypeMaps.count(frameworkType) == 0) {
+        HILOG_ERROR(LOG_CORE, "Invalid framework type, framework type is %{public}d", frameworkType);
+        return HIAPPEVENT_INVALID_PARAM_VALUE;
+    }
+    int64_t curTime = TimeUtil::GetElapsedMilliSecondsSinceBoot();
+    int64_t lastTime = g_lastReportTime.load();
+    if (curTime < lastTime) {
+        HILOG_ERROR(LOG_CORE, "failed to get timestamp");
+        return HIAPPEVENT_OPERATE_FAILED;
+    }
+    if (curTime - lastTime < ONE_MINUTE && lastTime > 0) {
+        HILOG_WARN(LOG_CORE, "The FW_MEM_ANOMALY event can't be frequently reported, lastReportTimeStamp"
+            " is %{public}" PRId64 ", currentTimeStamp is %{public}" PRId64, lastTime, curTime);
+        return HIAPPEVENT_REPORT_FREQUENCY_EXCEEDED;
+    }
+    std::string fwkVerStr;
+    TruncateString(frameworkVersion, fwkVerStr);
+    std::string descriptionStr;
+    TruncateString(description, descriptionStr);
+    ParamList list = HiAppEventCreateParamList();
+    list = AddInt32ParamValue(list, "frameworkType", (int32_t)frameworkType);
+    list = AddStringParamValue(list, "frameworkVersion", fwkVerStr.c_str());
+    list = AddStringParamValue(list, "description", descriptionStr.c_str());
+    int ret = HiAppEventInnerWrite("HIVIEWDFX", "FW_MEM_ANOMALY", STATISTIC, list);
+    HiAppEventDestroyParamList(list);
+    g_lastReportTime.store(curTime);
+    if (ret < 0) {
+        HILOG_WARN(LOG_CORE, "configuration item name is DISABLE, and the value is true; OH_HiAppEvent_Write is"
+            " disabled");
+        return HIAPPEVENT_OPERATE_FAILED;
+    }
+    return HiSysEventWriteFrameworkMemAnomaly(frameworkType, fwkVerStr);
 }
 
 void HiAppEventDestroyConfig(HiAppEvent_Config* config)

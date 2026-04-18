@@ -24,6 +24,7 @@ namespace AppEventUtil {
 bool IsBetaVersion();
 void ReportAppEventReceive(const std::vector<std::shared_ptr<AppEventPack>>& appEventInfos,
                            const std::string& watcherName, const std::string& callback);
+void GetApplicationInfo(std::string& bundleName, std::string& appVersion, std::string& runningId);
 } // namespace AppEventUtil
 } // namespace HiviewDFX
 } // namespace OHOS

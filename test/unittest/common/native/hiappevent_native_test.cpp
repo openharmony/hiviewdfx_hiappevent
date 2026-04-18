@@ -1034,3 +1034,31 @@ HWTEST_F(HiAppEventNativeTest, HiAppEventNDKTest035, TestSize.Level0)
         GTEST_LOG_(INFO) << "g_configFileExist is false, skip test.";
     }
 }
+
+/**
+ * @tc.name: HiAppEventNDKTest036
+ * @tc.desc: check the interface of OH_HiAppEvent_ReportFrameworkMemAnomaly with different parameters.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HiAppEventNativeTest, HiAppEventNDKTest036, TestSize.Level0)
+{
+    /**
+     * @tc.steps: step1. call the interface with invalid parameters.
+     * @tc.steps: step2. call the interface with valid parameters.
+     * @tc.steps: step3. call the interface with invalid parameters again, too frequently.
+     * @tc.steps: step4. check the results of each step.
+     */
+    std::string frameworkVersion = "1.0.2";
+    std::string description = "frameworkType is invalid";
+    int res = OH_HiAppEvent_ReportFrameworkMemAnomaly(static_cast<OH_HiAppEvent_FrameworkType>(4),
+                frameworkVersion.c_str(), description.c_str());
+    ASSERT_EQ(res, HIAPPEVENT_INVALID_PARAM_VALUE);
+    description = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, length bigger than 128";
+    res = OH_HiAppEvent_ReportFrameworkMemAnomaly(OH_FLUTTER_DART, frameworkVersion.c_str(), description.c_str());
+    sleep(4); // wait 4s for hiappevent.write and hisysevent.write complete
+    ASSERT_EQ(res, HIAPPEVENT_SUCCESS);
+    description = "";
+    res = OH_HiAppEvent_ReportFrameworkMemAnomaly(OH_KMP_KOTLIN, frameworkVersion.c_str(), description.c_str());
+    ASSERT_EQ(res, HIAPPEVENT_REPORT_FREQUENCY_EXCEEDED);
+}
