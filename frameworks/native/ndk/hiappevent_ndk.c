@@ -256,6 +256,11 @@ int OH_HiAppEvent_SetEventConfig(const char* name, HiAppEvent_Config* config)
     return HiAppEventSetEventConfig(name, config);
 }
 
+int OH_HiAppEvent_ReportFrameworkMemAnomaly(
+    enum OH_HiAppEvent_FrameworkType frameworkType, const char* frameworkVersion, const char* description)
+{
+    return HiAppEventReportFrameworkMemAnomaly(frameworkType, frameworkVersion, description);
+}
 void OH_HiAppEvent_DestroyConfig(HiAppEvent_Config* config)
 {
     HiAppEventDestroyConfig(config);

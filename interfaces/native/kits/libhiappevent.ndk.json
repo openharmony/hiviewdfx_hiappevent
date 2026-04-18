@@ -58,5 +58,8 @@
     },
     {
         "name": "OH_HiAppEvent_DestroyParamList"
+    },
+    {
+        "name": "OH_HiAppEvent_ReportFrameworkMemAnomaly"
     }
 ]
