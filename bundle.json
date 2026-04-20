@@ -24,10 +24,12 @@
       "components": [
         "ability_base",
         "ability_runtime",
+        "ace_ets2bundle",
         "bundle_framework",
         "common_event_service",
         "c_utils",
         "eventhandler",
+        "ets_frontend",
         "ffrt",
         "hitrace",
         "hilog",
