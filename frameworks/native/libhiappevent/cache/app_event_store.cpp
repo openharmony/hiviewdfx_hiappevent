@@ -148,6 +148,10 @@ int AppEventStoreCallback::OnCreate(NativeRdb::RdbStore& rdbStore)
         HILOG_ERROR(LOG_CORE, "failed to create table custom_event_params, ret=%{public}d", ret);
         return ret;
     }
+    if (int ret = ApiStatsDao::Create(rdbStore); ret != NativeRdb::E_OK) {
+        HILOG_ERROR(LOG_CORE, "failed to create table api_stats, ret=%{public}d", ret);
+        return ret;
+    }
     return NativeRdb::E_OK;
 }
 
@@ -342,6 +346,15 @@ int AppEventStore::InsertUserProperty(const std::string& name, const std::string
     return ExecuteDbOperation(func);
 }
 
+int AppEventStore::InsertApiMetricInfo(const std::string& kitName, const std::string& apiName,
+    const std::string& metricJson)
+{
+    auto func = [this, &kitName, &apiName, &metricJson] () {
+        return ApiStatsDao::MetricInsert(dbStore_, kitName, apiName, metricJson);
+    };
+    return ExecuteDbOperation(func);
+}
+
 int AppEventStore::InsertCustomEventParams(std::shared_ptr<AppEventPack> event)
 {
     std::vector<CustomEventParam> newParams;
@@ -433,6 +446,14 @@ int AppEventStore::DeleteUserProperty(const std::string& name)
     return ExecuteDbOperation(func);
 }
 
+int AppEventStore::ClearApiMetricInfo()
+{
+    auto func = [this] () {
+        return ApiStatsDao::MetricClear(dbStore_);
+    };
+    return ExecuteDbOperation(func);
+}
+
 int AppEventStore::QueryUserIds(std::unordered_map<std::string, std::string>& out)
 {
     auto func = [this, &out] () {
@@ -461,6 +482,14 @@ int AppEventStore::QueryUserProperty(const std::string& name, std::string& out)
 {
     auto func = [this, &name, &out] () {
         return UserPropertyDao::Query(dbStore_, name, out);
+    };
+    return ExecuteDbOperation(func);
+}
+
+int AppEventStore::QueryApiMetricInfoAll(std::map<std::pair<std::string, std::string>, std::vector<std::string>>& out)
+{
+    auto func = [this, &out] () {
+        return ApiStatsDao::MetricQueryAll(dbStore_, out);
     };
     return ExecuteDbOperation(func);
 }

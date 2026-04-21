@@ -63,6 +63,7 @@
                   "app_event.h",
                   "app_event_processor.h",
                   "app_event_processor_mgr.h",
+                  "app_api_metric.h",
                   "base_type.h"
               ]
           }

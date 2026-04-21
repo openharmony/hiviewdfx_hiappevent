@@ -110,6 +110,14 @@ struct CustomEvent {
     std::string name;
     std::vector<CustomEventParam> params;
 };
+
+namespace ApiStats {
+const std::string TABLE = "api_stats";
+const std::string FIELD_SEQ = "seq";
+const std::string FIELD_KIT = "kit";
+const std::string FIELD_API = "api";
+const std::string FIELD_METRIC = "metric";
+} // namespace ApiStats
 } // namespace AppEventCacheCommon
 } // namespace HiviewDFX
 } // namespace OHOS
