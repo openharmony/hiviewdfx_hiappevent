@@ -31,10 +31,10 @@ namespace OHOS {
 namespace HiviewDFX {
 namespace {
 constexpr uint32_t MAX_CUTOFF_SZ_BYTES = 5 * 1024 * 1024; // 5M: 5242880
-const std::string OS_INFO_PATH = "/data/storage/el2/log/hiappevent/info";
-const std::string DMP_LOG_CONFIG_NAME = "minidump_config.txt";
-const std::string DMP_CONFIG_FALSE = "{collectMinidump:false}";
-const std::string DMP_CONFIG_TRUE = "{collectMinidump:true}";
+const char* const DMP_INFO_PATH = "/data/storage/el2/log/hiappevent/info";
+const char* const DMP_LOG_CONFIG_NAME = "minidump_config.txt";
+const char* const DMP_CONFIG_FALSE = "{collectMinidump:false}";
+const char* const DMP_CONFIG_TRUE = "{collectMinidump:true}";
 enum CrashLogConfigType : uint8_t {
     EXTEND_PC_LR_PRINTING = 0,
     LOG_FILE_CUTOFF_SZ_BYTES,
@@ -80,12 +80,8 @@ bool ChangeCrashConfigToBoolValue(const std::string& strValue, uint32_t& out)
 
 bool SetMinidumpConfig(const std::string& strValue, uint32_t& out)
 {
-    std::string realPath;
-    if (!FileUtil::PathToRealPath(OS_INFO_PATH, realPath)) {
-        HILOG_ERROR(LOG_CORE, "OS_INFO_PATH Path to realPath failed.");
-        return false;
-    }
-    std::string path = realPath + "/" + DMP_LOG_CONFIG_NAME;
+    std::string path = "/";
+    path = DMP_INFO_PATH + path + DMP_LOG_CONFIG_NAME;
     if (ChangeCrashConfigToBoolValue(strValue, out) == false) {
         HILOG_ERROR(LOG_CORE, "failed to set crash config item, the value(%{public}s) should be bool type.",
             strValue.c_str());
@@ -103,7 +99,21 @@ bool SetMinidumpConfig(const std::string& strValue, uint32_t& out)
             return false;
         }
     }
+    HILOG_INFO(LOG_CORE, "set minidump config to %{public}d", out);
     return ret;
+}
+
+bool InitDir(const std::string& dirPath)
+{
+    if (!FileUtil::IsFileExists(dirPath) && !FileUtil::ForceCreateDirectory(dirPath)) {
+        HILOG_ERROR(LOG_CORE, "failed to create dir=%{public}s", dirPath.c_str());
+        return false;
+    }
+    if (OHOS::StorageDaemon::AclSetAccess(dirPath, "u:1201:rwx") != 0) {
+        HILOG_ERROR(LOG_CORE, "failed to set acl access dir=%{public}s", dirPath.c_str());
+        return false;
+    }
+    return true;
 }
 }
 
@@ -130,6 +140,13 @@ int AppCrashPolicy::SetEventPolicy(const std::map<uint8_t, uint32_t> &configMap)
         (void)DFX_SetCrashLogConfig(key, value);
     }
     return ErrorCode::HIAPPEVENT_VERIFY_SUCCESSFUL;
+}
+
+AppCrashPolicy::AppCrashPolicy()
+{
+    if (InitDir(DMP_INFO_PATH)) {
+        InitMiniDumpConfig();
+    }
 }
 
 int AppCrashPolicy::SetAppCrashLogPolicy(const std::map<std::string, std::string>& configMap)
@@ -169,6 +186,32 @@ int AppCrashPolicy::SetAppCrashLogPolicy(const std::map<std::string, std::string
         return ErrorCode::ERROR_INVALID_PARAM_VALUE;
     }
     return SetEventPolicy(crashConfigMap);
+}
+
+void AppCrashPolicy::InitMiniDumpConfig()
+{
+    std::string path = "/";
+    path = DMP_INFO_PATH + path + DMP_LOG_CONFIG_NAME;
+    if (FileUtil::IsFileExists(path)) {
+        std::vector<std::string> lines;
+        if (!FileUtil::LoadLinesFromFile(path, lines)) {
+            HILOG_ERROR(LOG_CORE, "file open failed, file = %{public}s", path.c_str());
+            return;
+        }
+        if (lines.size() > 0 && lines[0] == DMP_CONFIG_TRUE) {
+            SetEventPolicy({{COLLECT_MINIDUMP, 1}});
+            HILOG_INFO(LOG_CORE, "get minidump config in init is true");
+        }
+    } else {
+        bool ret = FileUtil::SaveStringToFile(path, DMP_CONFIG_FALSE, true);
+        if (ret == false) {
+            HILOG_ERROR(LOG_CORE, "fail to init collectMinidump configuration.");
+            return;
+        }
+        if (OHOS::StorageDaemon::AclSetAccess(path, "u:1201:r") != 0) {
+            HILOG_ERROR(LOG_CORE, "failed to set acl access dir=%{public}s", path.c_str());
+        }
+    }
 }
 }  // HiviewDFX
 }  // OHOS
