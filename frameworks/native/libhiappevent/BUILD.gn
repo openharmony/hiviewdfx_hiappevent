@@ -30,6 +30,7 @@ ohos_shared_library("libhiappevent_base") {
     ":libhiappevent_source_config",
     "cache:hiappevent_cache_config",
     "observer:hiappevent_watcher_config",
+    "stat:hiappevent_stat_config",
   ]
 
   sources = [
@@ -50,6 +51,7 @@ ohos_shared_library("libhiappevent_base") {
     "cleaner:hiappevent_cleaner",
     "observer:hiappevent_observer",
     "policy:hiappevent_policy",
+    "stat:hiappevent_stat",
     "utility:hiappevent_utility",
   ]
 
