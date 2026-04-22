@@ -15,6 +15,9 @@
 
 #include "hiappevent_cache_test.h"
 
+#include <json/json.h>
+
+#include "api_stats_dao.h"
 #include "app_event_cache_common.h"
 #include "app_event_db_cleaner.h"
 #include "app_event_log_cleaner.h"
@@ -44,6 +47,12 @@ const std::string TEST_EVENT_NAME = "test_name";
 constexpr int TEST_EVENT_TYPE = 1;
 const std::string TEST_PACKAGE = "{\"domain_\":\"hiappevent\", \"name_\":\"testEvent\"}";
 const std::string TEST_RUNNING_ID = "running_test";
+const std::string TEST_API_KIT = "test_api_kit";
+const std::string TEST_API_NAME = "test_api_name";
+const std::string TEST_API_KIT2 = "test_api_kit2";
+const std::string TEST_API_NAME2 = "test_api_name2";
+const std::string TEST_METRIC_JSON = "{\"errCode\":0,\"duration\":100,\"successful\":true}";
+const std::string TEST_METRIC_JSON2 = "{\"errCode\":1,\"duration\":200,\"successful\":false}";
 
 std::shared_ptr<AppEventPack> CreateAppEventPack()
 {
@@ -461,4 +470,135 @@ HWTEST_F(HiAppEventCacheTest, HiAppEventDbOnUpgrade001, TestSize.Level1)
 
     ret = AppEventStore::GetInstance().DestroyDbStore();
     EXPECT_EQ(ret, DB_SUCC);
+}
+
+/**
+ * @tc.name: AppEventStoreApiMetricTest001
+ * @tc.desc: check the AppEventStore InsertApiMetricInfo function.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HiAppEventCacheTest, AppEventStoreApiMetricTest001, TestSize.Level0)
+{
+    /**
+     * @tc.steps: step1. init db store.
+     * @tc.steps: step2. insert api metric info with valid params.
+     * @tc.steps: step3. check insert result.
+     */
+    int result = AppEventStore::GetInstance().InitDbStore();
+    ASSERT_EQ(result, DB_SUCC);
+
+    result = AppEventStore::GetInstance().InsertApiMetricInfo(TEST_API_KIT, TEST_API_NAME, TEST_METRIC_JSON);
+    EXPECT_EQ(result, OHOS::NativeRdb::E_OK);
+
+    result = AppEventStore::GetInstance().DestroyDbStore();
+    ASSERT_EQ(result, DB_SUCC);
+}
+
+/**
+ * @tc.name: AppEventStoreApiMetricTest003
+ * @tc.desc: check the AppEventStore QueryApiMetricInfoAll function.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HiAppEventCacheTest, AppEventStoreApiMetricTest003, TestSize.Level0)
+{
+    /**
+     * @tc.steps: step1. init db store and insert multiple records.
+     * @tc.steps: step2. query all api metric info.
+     * @tc.steps: step3. check query result.
+     */
+    int result = AppEventStore::GetInstance().InitDbStore();
+    ASSERT_EQ(result, DB_SUCC);
+
+    result = AppEventStore::GetInstance().InsertApiMetricInfo(TEST_API_KIT, TEST_API_NAME, TEST_METRIC_JSON);
+    EXPECT_EQ(result, OHOS::NativeRdb::E_OK);
+    result = AppEventStore::GetInstance().InsertApiMetricInfo(TEST_API_KIT2, TEST_API_NAME2, TEST_METRIC_JSON2);
+    EXPECT_EQ(result, OHOS::NativeRdb::E_OK);
+
+    std::map<std::pair<std::string, std::string>, std::vector<std::string>> out;
+    result = AppEventStore::GetInstance().QueryApiMetricInfoAll(out);
+    EXPECT_EQ(result, OHOS::NativeRdb::E_OK);
+    EXPECT_EQ(out.size(), 2);
+    EXPECT_EQ(out[std::make_pair(TEST_API_KIT, TEST_API_NAME)].size(), 1);
+    EXPECT_EQ(out[std::make_pair(TEST_API_KIT2, TEST_API_NAME2)].size(), 1);
+
+    result = AppEventStore::GetInstance().DestroyDbStore();
+    ASSERT_EQ(result, DB_SUCC);
+}
+
+/**
+ * @tc.name: AppEventStoreApiMetricTest004
+ * @tc.desc: check the AppEventStore ClearApiMetricInfo function.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HiAppEventCacheTest, AppEventStoreApiMetricTest004, TestSize.Level0)
+{
+    /**
+     * @tc.steps: step1. init db store and insert data.
+     * @tc.steps: step2. clear api metric info.
+     * @tc.steps: step3. verify data is cleared.
+     */
+    int result = AppEventStore::GetInstance().InitDbStore();
+    ASSERT_EQ(result, DB_SUCC);
+
+    result = AppEventStore::GetInstance().InsertApiMetricInfo(TEST_API_KIT, TEST_API_NAME, TEST_METRIC_JSON);
+    EXPECT_EQ(result, OHOS::NativeRdb::E_OK);
+
+    result = AppEventStore::GetInstance().ClearApiMetricInfo();
+    EXPECT_EQ(result, OHOS::NativeRdb::E_OK);
+
+    std::map<std::pair<std::string, std::string>, std::vector<std::string>> out;
+    result = AppEventStore::GetInstance().QueryApiMetricInfoAll(out);
+    EXPECT_EQ(result, OHOS::NativeRdb::E_OK);
+    EXPECT_EQ(out.size(), 0);
+
+    result = AppEventStore::GetInstance().DestroyDbStore();
+    ASSERT_EQ(result, DB_SUCC);
+}
+
+/**
+ * @tc.name: AppEventStoreApiMetricTest005
+ * @tc.desc: check the AppEventStore Insert+Query+Clear workflow.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HiAppEventCacheTest, AppEventStoreApiMetricTest005, TestSize.Level0)
+{
+    /**
+     * @tc.steps: step1. init db store.
+     * @tc.steps: step2. insert multiple api metric records.
+     * @tc.steps: step3. query all and verify.
+     * @tc.steps: step4. clear and verify empty.
+     */
+    int result = AppEventStore::GetInstance().InitDbStore();
+    ASSERT_EQ(result, DB_SUCC);
+
+    // Insert multiple records
+    for (int i = 0; i < 5; i++) {
+        Json::Value metricObj(Json::objectValue);
+        metricObj["errCode"] = i;
+        metricObj["duration"] = 100 + i;
+        metricObj["successful"] = (i % 2 == 0);
+        std::string metricJson = Json::FastWriter().write(metricObj);
+        result = AppEventStore::GetInstance().InsertApiMetricInfo(TEST_API_KIT, TEST_API_NAME, metricJson);
+        EXPECT_EQ(result, OHOS::NativeRdb::E_OK);
+    }
+
+    // Query all
+    std::map<std::pair<std::string, std::string>, std::vector<std::string>> out;
+    result = AppEventStore::GetInstance().QueryApiMetricInfoAll(out);
+    EXPECT_EQ(result, OHOS::NativeRdb::E_OK);
+    EXPECT_EQ(out.size(), 1);
+    EXPECT_EQ(out[std::make_pair(TEST_API_KIT, TEST_API_NAME)].size(), 5);
+
+    // Clear
+    result = AppEventStore::GetInstance().ClearApiMetricInfo();
+    EXPECT_EQ(result, OHOS::NativeRdb::E_OK);
+
+    // Verify empty
+    out.clear();
+    result = AppEventStore::GetInstance().QueryApiMetricInfoAll(out);
+    EXPECT_EQ(result, OHOS::NativeRdb::E_OK);
+    EXPECT_EQ(out.size(), 0);
+
+    result = AppEventStore::GetInstance().DestroyDbStore();
+    ASSERT_EQ(result, DB_SUCC);
 }

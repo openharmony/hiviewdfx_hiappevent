@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+# Copyright (c) 2026 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,34 +13,39 @@
 
 import("//build/ohos.gni")
 
-config("hiappevent_cache_config") {
+config("hiappevent_stat_config") {
   visibility = [ "*:*" ]
   include_dirs = [
     "include",
     "../include",
+    "../../../../interfaces/native/inner_api/include",
   ]
 }
 
-ohos_source_set("hiappevent_cache") {
-  public_configs = [ ":hiappevent_cache_config" ]
+ohos_source_set("hiappevent_stat") {
+  public_configs = [ ":hiappevent_stat_config" ]
 
   sources = [
-    "app_event_dao.cpp",
-    "app_event_mapping_dao.cpp",
-    "app_event_observer_dao.cpp",
-    "app_event_store.cpp",
-    "custom_event_param_dao.cpp",
-    "user_id_dao.cpp",
-    "user_property_dao.cpp",
-    "api_stats_dao.cpp",
+    "hiappevent_api_metric.cpp",
+    "api_stats_mgr.cpp",
+    "api_stats_aggregator.cpp",
+    "api_stats_timer.cpp",
+    "api_stats_storage.cpp",
   ]
 
-  deps = [ "../utility:hiappevent_utility" ]
+  deps = [ 
+    "../cache:hiappevent_cache",
+    "../utility:hiappevent_utility",
+  ]
 
   external_deps = [
     "c_utils:utils",
+    "ffrt:libffrt",
     "hilog:libhilog",
     "relational_store:native_rdb",
+    "storage_service:storage_manager_acl",
+    "storage_service:storage_manager_sa_proxy",
+    "jsoncpp:jsoncpp",
   ]
 
   part_name = "hiappevent"

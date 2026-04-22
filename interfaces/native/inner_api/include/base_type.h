@@ -23,6 +23,17 @@ namespace OHOS {
 namespace HiviewDFX {
 class AppEventPack;
 namespace HiAppEvent {
+struct ApiInfo {
+    std::string kit;
+    std::string api;
+};
+
+struct ApiMetric {
+    int errCode;
+    int duration;
+    bool successful;
+};
+
 struct UserId {
     std::string name;
     std::string value;
