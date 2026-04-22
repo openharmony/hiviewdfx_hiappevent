@@ -32,39 +32,39 @@ namespace HiAppEvent {
 ApiStatsManager::ApiStatsManager()
 {
     ScheduleReport();
-    timer.SetBackUpCallback([this]() {
+    timer_.SetBackUpCallback([this]() {
         this->ScheduleBackUp();
     });
-    timer.SetReportCallback([this]() {
+    timer_.SetReportCallback([this]() {
         this->ScheduleReport();
     });
-    timer.Start();
+    timer_.Start();
 }
 
 ApiStatsManager::~ApiStatsManager()
 {
-    timer.Stop();
+    timer_.Stop();
 }
 
 void ApiStatsManager::AddRecord(ApiDescriptor descriptor, ApiMetric metric)
 {
     HILOG_DEBUG(LOG_CORE, "AddRecord: kitName=%{public}s, apiName=%{public}s",
         descriptor.KitName().c_str(), descriptor.ApiName().c_str());
-    std::lock_guard<std::mutex> lock(mut);
-    aggregator.Record(descriptor, metric);
+    std::lock_guard<std::mutex> lock(mut_);
+    aggregator_.Record(descriptor, metric);
 }
 
 void ApiStatsManager::ScheduleBackUpInner()
 {
-    if (!aggregator.IsUpdatedAfterLastBackup()) {
+    if (!aggregator_.IsUpdatedAfterLastBackup()) {
         HILOG_INFO(LOG_CORE, "ScheduleBackUpInner: no update, skip");
         return;
     }
 
-    auto apiMetrics = aggregator.GetApiMetrics();
+    auto apiMetrics = aggregator_.GetApiMetrics();
     HILOG_INFO(LOG_CORE, "ScheduleBackUpInner: backup count=%{public}zu", apiMetrics.size());
     if (ApiStatsStorage::GetInstance().Backup(apiMetrics) == 0) {
-        aggregator.ClearRecord();
+        aggregator_.ClearRecord();
         HILOG_DEBUG(LOG_CORE, "ScheduleBackUpInner success");
     } else {
         HILOG_ERROR(LOG_CORE, "ScheduleBackUpInner failed to backup api stats");
@@ -74,14 +74,14 @@ void ApiStatsManager::ScheduleBackUpInner()
 void ApiStatsManager::ScheduleBackUp()
 {
     HILOG_DEBUG(LOG_CORE, "ScheduleBackUp start");
-    std::lock_guard<std::mutex> lock(mut);
+    std::lock_guard<std::mutex> lock(mut_);
     ApiStatsManager::ScheduleBackUpInner();
 }
 
 void ApiStatsManager::ScheduleReport()
 {
     HILOG_DEBUG(LOG_CORE, "ScheduleReport start");
-    std::lock_guard<std::mutex> lock(mut);
+    std::lock_guard<std::mutex> lock(mut_);
     ApiStatsManager::ScheduleBackUpInner();
     
     ApiMetricsMap apiMetrics;

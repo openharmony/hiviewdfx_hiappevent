@@ -50,7 +50,7 @@ public:
  
 private:
     ApiMetricsMap apiMetricsMap_;
-    bool updatedAfterLastBackup = false;
+    bool updatedAfterLastBackup_ = false;
  
     void MarkAsUpdated();
 };
