@@ -24,6 +24,7 @@ ohos_shared_library("hiappevent_innerapi") {
   sources = [
     "src/app_event.cpp",
     "src/app_event_processor_mgr.cpp",
+    "src/app_api_metric.cpp",
   ]
 
   deps = [ "../../../frameworks/native/libhiappevent:libhiappevent_base" ]
