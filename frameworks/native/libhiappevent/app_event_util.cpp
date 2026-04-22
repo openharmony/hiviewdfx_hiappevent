@@ -14,10 +14,12 @@
  */
 #include "app_event_util.h"
 #include "application_context.h"
-#include "bundle_mgr_client.h"
+#include "bundle_mgr_interface.h"
+#include "bundle_mgr_proxy.h"
 #include "event_json_util.h"
 #include "hilog/log.h"
 #include "hisysevent_c.h"
+#include "iservice_registry.h"
 #include "parameters.h"
 
 #undef LOG_DOMAIN
@@ -92,6 +94,43 @@ void ReportAppEventReceive(const std::vector<std::shared_ptr<AppEventPack>>& app
     }
 }
 
+sptr<AppExecFwk::IBundleMgr> GetBundleManager()
+{
+    auto systemManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (!systemManager) {
+        HILOG_ERROR(LOG_CORE,"Get system ability manager failed");
+        return nullptr;
+    }
+    auto remoteObject = systemManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (!remoteObject) {
+        HILOG_ERROR(LOG_CORE,"Get system ability failed");
+        return nullptr;
+    }
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    return bundleMgrProxy;
+}
+
+AppExecFwk::BundleInfo* GetBundleInfo()
+{
+    static bool isInit = false;
+    static AppExecFwk::BundleInfo bundleInfo;
+    if (!isInit) {
+        auto bundleInstance = GetBundleManager();
+        if (bundleInstance == nullptr) {
+            HILOG_ERROR(LOG_CORE,"bundleInstance is nullptr");
+            return nullptr;
+        }
+        int32_t flag = static_cast<int32_t>(AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_REQUESTED_PERMISSION);
+        auto ret = bundleInstance->GetBundleInfoForSelf(flag, bundleInfo);
+        if (ret != ERR_OK) {
+            HILOG_ERROR(LOG_CORE,"GetBundleInfoForSelf failed! ret = %{public}d", ret);
+            return nullptr;
+        }
+        isInit = true;
+    }
+    return &bundleInfo;
+}
+
 void GetApplicationInfo(std::string& bundleName, std::string& appVersion, std::string& runningId)
 {
     if (getuid() < MIN_APP_UID) {
@@ -100,18 +139,17 @@ void GetApplicationInfo(std::string& bundleName, std::string& appVersion, std::s
     }
     std::shared_ptr<OHOS::AbilityRuntime::ApplicationContext> context =
         OHOS::AbilityRuntime::Context::GetApplicationContext();
-    if (context == nullptr || (bundleName = context->GetBundleName()).empty()) {
-        HILOG_ERROR(LOG_CORE, "The context is null or the bundleName is empty");
+    if (context == nullptr) {
+        HILOG_ERROR(LOG_CORE, "The context is null");
         return;
     }
     runningId = context->GetAppRunningUniqueId();
-    AppExecFwk::BundleInfo info;
-    AppExecFwk::BundleMgrClient client;
-    if (!client.GetBundleInfo(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT, info, Constants::ALL_USERID)) {
-        HILOG_WARN(LOG_CORE, "Failed to query BundleInfo from bms, bundle: %{public}s", bundleName.c_str());
+    auto bundleInfo = GetBundleInfo();
+    if (bundleInfo == nullptr) {
         return;
     }
-    appVersion = info.versionName;
+    bundleName = bundleInfo->name;
+    appVersion = bundleInfo->versionName;
 }
 } // namespace AppEventUtil
 } // namespace HiviewDFX

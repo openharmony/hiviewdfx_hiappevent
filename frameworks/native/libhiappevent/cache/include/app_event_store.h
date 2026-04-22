@@ -29,6 +29,7 @@
 #include "singleton.h"
 #include "user_id_dao.h"
 #include "user_property_dao.h"
+#include "api_stats_dao.h"
 
 namespace OHOS {
 namespace HiviewDFX {
@@ -45,6 +46,7 @@ public:
     int InsertEventMapping(const std::vector<AppEventCacheCommon::EventObserverInfo>& eventObservers);
     int InsertUserId(const std::string& name, const std::string& value);
     int InsertUserProperty(const std::string& name, const std::string& value);
+    int InsertApiMetricInfo(const std::string& kitName, const std::string& apiName, const std::string& metricJson);
     int InsertCustomEventParams(std::shared_ptr<AppEventPack> event);
     int UpdateUserId(const std::string& name, const std::string& value);
     int UpdateUserProperty(const std::string& name, const std::string& value);
@@ -59,11 +61,13 @@ public:
     int QueryUserId(const std::string& name, std::string& out);
     int QueryUserProperties(std::unordered_map<std::string, std::string>& out);
     int QueryUserProperty(const std::string& name, std::string& out);
+    int QueryApiMetricInfoAll(std::map<std::pair<std::string, std::string>, std::vector<std::string>>& out);
     int QueryCustomParamsAdd2EventPack(std::shared_ptr<AppEventPack> event);
     int DeleteObserver(int64_t observerSeq);
     int DeleteEventMapping(int64_t observerSeq = 0, const std::vector<int64_t>& eventSeqs = {});
     int DeleteUserId(const std::string& name = "");
     int DeleteUserProperty(const std::string& name = "");
+    int ClearApiMetricInfo();
     int DeleteEvent(int64_t eventSeq = 0);
     int DeleteCustomEventParams();
     int DeleteEvent(const std::vector<int64_t>& eventSeqs);
