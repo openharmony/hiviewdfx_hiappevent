@@ -36,15 +36,15 @@ int Create(NativeRdb::RdbStore& dbStore)
     /**
      * table: api_stats
      *
-     * |-----------|--------|---------|
-     * |    kit    |  api   | metric  |
-     * |-----------|--------|---------|
-     * |   TEXT    |  TEXT  |  TEXT   |
-     * |-----------|--------|---------|
+     * |----------------|-------------|---------|
+     * |    kit_name    |  api_name   | metric  |
+     * |----------------|-------------|---------|
+     * |     TEXT       |    TEXT     |  TEXT   |
+     * |----------------|-------------|---------|
      */
     const std::vector<std::pair<std::string, std::string>> fields = {
-        {FIELD_KIT, SqlUtil::SQL_TEXT_TYPE},
-        {FIELD_API, SqlUtil::SQL_TEXT_TYPE},
+        {FIELD_KITNAME, SqlUtil::SQL_TEXT_TYPE},
+        {FIELD_APINAME, SqlUtil::SQL_TEXT_TYPE},
         {FIELD_METRIC, SqlUtil::SQL_TEXT_TYPE},
     };
     std::string sql = SqlUtil::CreateTable(TABLE, fields);
@@ -55,8 +55,8 @@ int MetricInsert(std::shared_ptr<NativeRdb::RdbStore> dbStore, const std::string
     const std::string& metric)
 {
     NativeRdb::ValuesBucket bucket;
-    bucket.PutString(FIELD_KIT, kitName);
-    bucket.PutString(FIELD_API, apiName);
+    bucket.PutString(FIELD_KITNAME, kitName);
+    bucket.PutString(FIELD_APINAME, apiName);
     bucket.PutString(FIELD_METRIC, metric);
 
     int64_t seq = 0;
@@ -70,7 +70,7 @@ int MetricQueryAll(std::shared_ptr<NativeRdb::RdbStore> dbStore,
     std::map<std::pair<std::string, std::string>, std::vector<std::string>>& out)
 {
     NativeRdb::AbsRdbPredicates predicates(TABLE);
-    auto resultSet = dbStore->Query(predicates, {FIELD_KIT, FIELD_API, FIELD_METRIC});
+    auto resultSet = dbStore->Query(predicates, {FIELD_KITNAME, FIELD_APINAME, FIELD_METRIC});
     if (resultSet == nullptr) {
         HILOG_ERROR(LOG_CORE, "failed to query table");
         return NativeRdb::E_ERROR;
@@ -105,7 +105,7 @@ int MetricClear(std::shared_ptr<NativeRdb::RdbStore> dbStore)
     NativeRdb::AbsRdbPredicates predicates(TABLE);
     int deleteRows = 0;
     int ret = dbStore->Delete(deleteRows, predicates);
-    HILOG_INFO(LOG_CORE, "clear all api stats, ret=%{public}d", ret);
+    HILOG_INFO(LOG_CORE, "clear all api stats(%{public}d records), ret=%{public}d", deleteRows, ret);
     return ret;
 }
 } // namespace ApiStatsDao

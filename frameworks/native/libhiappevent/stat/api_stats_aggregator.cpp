@@ -46,17 +46,17 @@ void ApiStatsAggregator::ClearRecord()
 
 void ApiStatsAggregator::MarkAsUpdated()
 {
-    updatedAfterLastBackup = true;
+    updatedAfterLastBackup_ = true;
 }
 
 void ApiStatsAggregator::MarkAsBackuped()
 {
-    updatedAfterLastBackup = false;
+    updatedAfterLastBackup_ = false;
 }
 
 bool ApiStatsAggregator::IsUpdatedAfterLastBackup()
 {
-    return updatedAfterLastBackup;
+    return updatedAfterLastBackup_;
 }
 
 ApiMetricsMap ApiStatsAggregator::GetApiMetrics() const

@@ -28,21 +28,21 @@ namespace HiAppEvent {
 
 class ApiDescriptor {
 public:
-    ApiDescriptor(const std::string& kitName, const std::string& apiName) : kitName(kitName), apiName(apiName) {}
+    ApiDescriptor(const std::string& kitName, const std::string& apiName) : kitName_(kitName), apiName_(apiName) {}
     
     std::string KitName() const
     {
-        return std::string(kitName);
+        return std::string(kitName_);
     }
     
     std::string ApiName() const
     {
-        return std::string(apiName);
+        return std::string(apiName_);
     }
 
     std::string Description() const
     {
-        return kitName + ':' + apiName;
+        return kitName_ + ':' + apiName_;
     }
 
     struct ApiDescriptorComparator {
@@ -53,8 +53,8 @@ public:
     };
     
 private:
-    const std::string kitName;
-    const std::string apiName;
+    const std::string kitName_;
+    const std::string apiName_;
 };
 
 using ApiMetricsMap = std::map<ApiDescriptor, std::vector<ApiMetric>, ApiDescriptor::ApiDescriptorComparator>;

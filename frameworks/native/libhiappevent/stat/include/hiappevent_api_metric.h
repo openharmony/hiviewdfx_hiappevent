@@ -34,7 +34,7 @@ public:
     int ProcessApiMetric(const HiAppEvent::ApiInfo& apiInfo, const HiAppEvent::ApiMetric& metric);
 
 private:
-    ApiStatsManager apiStatsMgr;
+    ApiStatsManager apiStatsMgr_;
 };
 
 } // namespace HiAppEvent

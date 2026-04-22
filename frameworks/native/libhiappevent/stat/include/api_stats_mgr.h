@@ -43,9 +43,9 @@ private:
     void ReportStats(const std::vector<ApiStatsReport>& reports);
     std::shared_ptr<AppEventPack> ConvertReportToEventPack(const ApiStatsReport& report);
 
-    ApiStatsAggregator aggregator;
-    ApiStatsTimer timer;
-    std::mutex mut;
+    ApiStatsAggregator aggregator_;
+    ApiStatsTimer timer_;
+    std::mutex mut_;
 };
 
 } // namespace HiAppEvent

@@ -45,7 +45,7 @@ int ApiMetricProcessor::ProcessApiMetric(const HiAppEvent::ApiInfo& apiInfo, con
         return ErrorCode::ERROR_INVALID_PARAM_VALUE;
     }
     ApiDescriptor descriptor(apiInfo.kit, apiInfo.api);
-    apiStatsMgr.AddRecord(descriptor, metric);
+    apiStatsMgr_.AddRecord(descriptor, metric);
     return ErrorCode::HIAPPEVENT_VERIFY_SUCCESSFUL;
 }
 

@@ -114,8 +114,8 @@ struct CustomEvent {
 namespace ApiStats {
 const std::string TABLE = "api_stats";
 const std::string FIELD_SEQ = "seq";
-const std::string FIELD_KIT = "kit";
-const std::string FIELD_API = "api";
+const std::string FIELD_KITNAME = "kit_name";
+const std::string FIELD_APINAME = "api_name";
 const std::string FIELD_METRIC = "metric";
 } // namespace ApiStats
 } // namespace AppEventCacheCommon
