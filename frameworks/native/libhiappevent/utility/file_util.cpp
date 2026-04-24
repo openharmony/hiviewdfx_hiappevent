@@ -22,8 +22,6 @@
 #include <sys/xattr.h>
 #include <unistd.h>
 
-#include "directory_ex.h"
-
 namespace OHOS {
 namespace HiviewDFX {
 namespace FileUtil {
@@ -109,10 +107,6 @@ bool ForceRemoveDirectory(const std::string& dir, bool isDeleteSelf)
     return true;
 }
 
-bool PathToRealPath(const std::string& path, std::string& realPath)
-{
-    return OHOS::PathToRealPath(path, realPath);
-}
 void GetDirFiles(const std::string& dir, std::vector<std::string>& files)
 {
     DIR* dirPtr = opendir(dir.c_str());
