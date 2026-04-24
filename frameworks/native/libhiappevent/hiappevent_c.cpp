@@ -72,14 +72,13 @@ ParamList AddParamArrayValue(ParamList list, const char* name, const T* arr, int
     return reinterpret_cast<ParamList>(ndkAppEventPackPtr);
 }
 
-const std::map<int, std::string>& GetFrameworkTypes()
+std::map<int, std::string> GetFrameworkTypes()
 {
-    const std::map<int, std::string>& frameworkTypeMaps = {
+    return {
         {0, "OH_FLUTTER_DART"},
         {1, "OH_REACT_NATIVE_HERMES"},
         {2, "OH_KMP_KOTLIN"}
     };
-    return frameworkTypeMaps;
 }
 
 void TruncateString(const char* src, std::string& destStr)
@@ -101,7 +100,7 @@ int HiSysEventWriteFrameworkMemAnomaly(enum OH_HiAppEvent_FrameworkType framewor
         { .name = "RUNNING_ID",      .t = HISYSEVENT_STRING,    .arraySize = 0, }
     };
     std::string fwkTypeStr;
-    auto& fwkTypeMaps = GetFrameworkTypes();
+    auto fwkTypeMaps = GetFrameworkTypes();
     auto it = fwkTypeMaps.find(frameworkType);
     if (it != fwkTypeMaps.end()) {
         fwkTypeStr = it->second;
@@ -321,7 +320,7 @@ int HiAppEventReportFrameworkMemAnomaly(
     enum OH_HiAppEvent_FrameworkType frameworkType, const char* frameworkVersion, const char* description)
 {
     static std::atomic<int64_t> lastReportTime {0};
-    auto& fwkTypeMaps = GetFrameworkTypes();
+    auto fwkTypeMaps = GetFrameworkTypes();
     if (fwkTypeMaps.count(frameworkType) == 0) {
         HILOG_ERROR(LOG_CORE, "Invalid framework type, framework type is %{public}d", frameworkType);
         return HIAPPEVENT_INVALID_PARAM_VALUE;
