@@ -21,7 +21,7 @@ namespace OHOS {
 namespace HiviewDFX {
 class AppCrashPolicy : public EventPolicyBase {
 public:
-    AppCrashPolicy() = default;
+    AppCrashPolicy();
     ~AppCrashPolicy() override = default;
 
     int SetEventPolicy(const std::map<std::string, std::string>& configMap) override;
@@ -29,6 +29,7 @@ public:
 
 private:
     int SetAppCrashLogPolicy(const std::map<std::string, std::string>& configMap);
+    void InitMiniDumpConfig();
 };
 }  // HiviewDFX
 }  // OHOS

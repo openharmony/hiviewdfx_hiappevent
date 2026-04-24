@@ -30,7 +30,6 @@ bool RemoveFile(const std::string& file);
 bool RemoveDirectory(const std::string& dir);
 bool ForceCreateDirectory(const std::string& dir);
 bool ForceRemoveDirectory(const std::string& dir, bool isDeleteSelf = true);
-bool PathToRealPath(const std::string& path, std::string& realPath);
 void GetDirFiles(const std::string& dir, std::vector<std::string>& files);
 uint64_t GetDirSize(const std::string& dir);
 uint64_t GetFileSize(const std::string& file);
