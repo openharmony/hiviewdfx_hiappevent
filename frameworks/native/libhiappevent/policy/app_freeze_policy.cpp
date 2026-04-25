@@ -31,7 +31,7 @@ constexpr int INVALID_PARAM = -1;
 int AppFreezePolicy::SetEventPolicy(const std::map<std::string, std::string>& configMap)
 {
     auto conf = configMap;
-    return EventPolicyUtils::GetInstance().ConfigPageSwitch("appFrpageSwitchLogEnable", conf);
+    return EventPolicyUtils::GetInstance().ConfigPageSwitch("APP_FREEZE", conf);
 }
 
 int AppFreezePolicy::SetEventPolicy(const std::map<uint8_t, uint32_t>& configMap)

@@ -286,7 +286,12 @@ std::shared_ptr<AppEventPack> OsEventListener::GetAppEventPackFromJson(const std
         }
         bool isAppFreeze = appEventPack->GetName() == "APP_FREEZE";
         std::string pageSwitchLog;
-        (void)CreatePageSwitchSnapshot(eventTime, isAppFreeze, pageSwitchLog);
+        int ret = CreatePageSwitchSnapshot(eventTime, isAppFreeze, pageSwitchLog);
+        if (ret != 0) {
+            HILOG_ERROR(LOG_CORE,
+                "failed to create page switch log, the pageSwitchLog is empty by default. ret=%{public}d", ret);
+            pageSwitchLog.clear();
+        }
         paramsJson["page_switch_log"] = pageSwitchLog;
     }
     appEventPack->SetParamStr(Json::FastWriter().write(paramsJson));

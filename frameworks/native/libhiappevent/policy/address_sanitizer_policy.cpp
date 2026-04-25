@@ -31,7 +31,7 @@ constexpr int INVALID_PARAM = -1;
 int AddressSanitizerPolicy::SetEventPolicy(const std::map<std::string, std::string>& configMap)
 {
     auto conf = configMap;
-    return EventPolicyUtils::GetInstance().ConfigPageSwitch("addrepageSwitchLogEnable", conf);
+    return EventPolicyUtils::GetInstance().ConfigPageSwitch("ADDRESS_SANITIZER", conf);
 }
 
 int AddressSanitizerPolicy::SetEventPolicy(const std::map<uint8_t, uint32_t>& configMap)
