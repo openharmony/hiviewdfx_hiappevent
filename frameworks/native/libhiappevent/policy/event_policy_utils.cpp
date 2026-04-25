@@ -34,10 +34,25 @@ namespace HiviewDFX {
 namespace {
 constexpr const char* const APP_EVENT_DIR = "/eventConfig";
 constexpr const char* const PAGE_SWITCH_CONFIG = "pageSwitchLogEnable";
-constexpr const char* const ADDRESS_SANITIZER_PAGE_SWITCH_LOG_ENABLE = "addrepageSwitchLogEnable";
-constexpr const char* const APP_CRASH_PAGE_SWITCH_LOG_ENABLE = "appCrpageSwitchLogEnable";
-constexpr const char* const APP_FREEZE_PAGE_SWITCH_LOG_ENABLE = "appFrpageSwitchLogEnable";
-constexpr const char* const RESOURCE_OVERLIMIT_PAGE_SWITCH_LOG_ENABLE = "resoupageSwitchLogEnable";
+enum PageSwitchLogEnableCode : int {
+    ADDRESS_SANITIZER_ENABLE = 0,
+    APP_CRASH_ENABLE = 1,
+    APP_FREEZE_ENABLE = 2,
+    RESOURCE_OVERLIMIT_ENABLE = 3,
+    UNKNOWN = 4
+};
+
+PageSwitchLogEnableCode GetPageSwitchLogEnableCode(const std::string& eventName)
+{
+    static const std::map<std::string, PageSwitchLogEnableCode> typeMap = {
+        {"ADDRESS_SANITIZER", PageSwitchLogEnableCode::ADDRESS_SANITIZER_ENABLE},
+        {"APP_CRASH", PageSwitchLogEnableCode::APP_CRASH_ENABLE},
+        {"APP_FREEZE", PageSwitchLogEnableCode::APP_FREEZE_ENABLE},
+        {"RESOURCE_OVERLIMIT", PageSwitchLogEnableCode::RESOURCE_OVERLIMIT_ENABLE}
+    };
+    auto it = typeMap.find(eventName);
+    return (it != typeMap.end()) ? it->second : PageSwitchLogEnableCode::UNKNOWN;
+}
 }
 
 EventPolicyUtils& EventPolicyUtils::GetInstance()
@@ -46,10 +61,10 @@ EventPolicyUtils& EventPolicyUtils::GetInstance()
     return instance;
 }
 
-int EventPolicyUtils::ConfigPageSwitch(const std::string& key, std::map<std::string, std::string>& configMap)
+int EventPolicyUtils::ConfigPageSwitch(const std::string& eventName, std::map<std::string, std::string>& configMap)
 {
     if (configMap.empty()) {
-        HILOG_WARN(LOG_CORE, "the configMap is empty when config page switch %{public}s.", key.c_str());
+        HILOG_WARN(LOG_CORE, "the configMap is empty when config page switch %{public}s.", eventName.c_str());
         return ErrorCode::HIAPPEVENT_VERIFY_SUCCESSFUL;
     }
     auto value = configMap.find(PAGE_SWITCH_CONFIG);
@@ -57,7 +72,13 @@ int EventPolicyUtils::ConfigPageSwitch(const std::string& key, std::map<std::str
         HILOG_ERROR(LOG_CORE, "pageSwitchLogEnable param does not exist.");
         return ErrorCode::ERROR_INVALID_PARAM_VALUE;
     }
-    std::map<std::string, std::string> curConf = {{key, value->second}};
+    auto cfgCode = GetPageSwitchLogEnableCode(eventName);
+    if (cfgCode == PageSwitchLogEnableCode::UNKNOWN) {
+        HILOG_ERROR(LOG_CORE, "failed to config pageSwitchLogEnable, %{public}s is invalid.", eventName.c_str());
+        return ErrorCode::ERROR_INVALID_PARAM_VALUE;
+    }
+    std::string property = PAGE_SWITCH_CONFIG + std::to_string(static_cast<int>(cfgCode));
+    std::map<std::string, std::string> curConf = {{property, value->second}};
     configMap.erase(PAGE_SWITCH_CONFIG);
     std::string configDir = GetConfigDir(APP_EVENT_DIR);
     if (configDir.empty()) {
@@ -90,13 +111,11 @@ std::string EventPolicyUtils::GetConfigDir(const std::string& subDir)
     return configDir;
 }
 
-bool EventPolicyUtils::GetEventPageSwitchStatus(const std::string& name)
+bool EventPolicyUtils::GetEventPageSwitchStatus(const std::string& eventName)
 {
-    std::map<std::string, std::string> enableName = {{"APP_CRASH", "appCr"}, {"APP_FREEZE", "appFr"},
-        {"RESOURCE_OVERLIMIT", "resou"}, {"ADDRESS_SANITIZER", "addre"}};
-    auto propertyName = enableName.find(name);
-    if (propertyName == enableName.end()) {
-        HILOG_INFO(LOG_CORE, "%{public}s event is not support page switch log.", name.c_str());
+    auto cfgCode = GetPageSwitchLogEnableCode(eventName);
+    if (cfgCode == PageSwitchLogEnableCode::UNKNOWN) {
+        HILOG_ERROR(LOG_CORE, "%{public}s event is not support page switch log.", eventName.c_str());
         return false;
     }
     std::string configDir = GetConfigDir(APP_EVENT_DIR);
@@ -104,7 +123,8 @@ bool EventPolicyUtils::GetEventPageSwitchStatus(const std::string& name)
         HILOG_ERROR(LOG_CORE, "failed to get sandbox config dir");
         return false;
     }
-    std::string property = "user.event_config." + propertyName->second + PAGE_SWITCH_CONFIG;
+    std::string property =
+        std::string("user.event_config.") + PAGE_SWITCH_CONFIG + std::to_string(static_cast<int>(cfgCode));
     std::string value;
     if (!FileUtil::GetDirXattr(configDir, property, value)) {
         HILOG_WARN(LOG_CORE, "failed to get dir cfg xattr.");
@@ -113,7 +133,7 @@ bool EventPolicyUtils::GetEventPageSwitchStatus(const std::string& name)
     RemoveEventConfig(configDir, property);
     
     auto pos = value.find(",");
-    if (pos == std::string::npos) {
+    if (pos == std::string::npos || pos >= value.size() - 1) {
         HILOG_WARN(LOG_CORE, "failed to parse history enable status. the status format is error.");
         return false;
     }
@@ -122,16 +142,16 @@ bool EventPolicyUtils::GetEventPageSwitchStatus(const std::string& name)
 
 int EventPolicyUtils::SaveEventConfig(const std::string& configDir, const std::map<std::string, std::string>& configMap)
 {
-    if (runningId_.empty()) {
-        runningId_ = HiAppEventConfig::GetInstance().GetRunningId();
-        if (runningId_.empty()) {
+    if (GetRunningId().empty()) {
+        SetRunningId(HiAppEventConfig::GetInstance().GetRunningId());
+        if (GetRunningId().empty()) {
             return ErrorCode::ERROR_UNKNOWN;
         }
     }
 
     for (const auto& config : configMap) {
         std::string property = "user.event_config." + config.first;
-        std::string newValue = runningId_ + "," + config.second;
+        std::string newValue = GetRunningId() + "," + config.second;
         if (!FileUtil::SetDirXattr(configDir, property, newValue)) {
             HILOG_ERROR(LOG_CORE, "failed to SetDirXattr, dir: %{public}s, property: %{public}s, newValue: %{public}s,"
                 " err: %{public}s, errno: %{public}d", configDir.c_str(), property.c_str(), newValue.c_str(),
@@ -147,19 +167,25 @@ int EventPolicyUtils::SaveEventConfig(const std::string& configDir, const std::m
 
 bool EventPolicyUtils::GetCurSysPageSwitchStatus(const std::string& configDir)
 {
-    std::vector<std::string> keys = {ADDRESS_SANITIZER_PAGE_SWITCH_LOG_ENABLE, APP_CRASH_PAGE_SWITCH_LOG_ENABLE,
-        APP_FREEZE_PAGE_SWITCH_LOG_ENABLE, RESOURCE_OVERLIMIT_PAGE_SWITCH_LOG_ENABLE};
+    std::vector<PageSwitchLogEnableCode> cfgCodes = {
+        ADDRESS_SANITIZER_ENABLE,
+        APP_CRASH_ENABLE,
+        APP_FREEZE_ENABLE,
+        RESOURCE_OVERLIMIT_ENABLE
+    };
     std::string value;
-    for (const auto& key : keys) {
-        if (!FileUtil::GetDirXattr(configDir, "user.event_config." + key, value)) {
+    for (const auto& cfgCode : cfgCodes) {
+        std::string property =
+            std::string("user.event_config.") + PAGE_SWITCH_CONFIG + std::to_string(static_cast<int>(cfgCode));
+        if (!FileUtil::GetDirXattr(configDir, property, value)) {
             continue;
         }
         auto pos = value.find(",");
-        if (pos == std::string::npos) {
+        if (pos == std::string::npos || pos >= value.size() - 1) {
             HILOG_WARN(LOG_CORE, "failed to parse history enable status. the value format is error.");
             continue;
         }
-        if (value.substr(0, pos) == runningId_ && value.substr(pos + 1) == "true") {
+        if (value.substr(0, pos) == GetRunningId() && value.substr(pos + 1) == "true") {
             return true;
         }
     }
@@ -180,14 +206,26 @@ void EventPolicyUtils::RemoveEventConfig(const std::string& configDir, const std
     }
 
     historyRunningId = historyRunningId.substr(0, pos);
-    if (runningId_.empty()) {
-        runningId_ = HiAppEventConfig::GetInstance().GetRunningId();
+    if (GetRunningId().empty()) {
+        SetRunningId(HiAppEventConfig::GetInstance().GetRunningId());
     }
-    if (runningId_ != historyRunningId) {
+    if (GetRunningId() != historyRunningId) {
         if (!FileUtil::RemoveDirXattr(configDir, property)) {
             HILOG_WARN(LOG_CORE, "failed to clear history enable status.");
         }
     }
+}
+
+std::string EventPolicyUtils::GetRunningId()
+{
+    std::shared_lock<std::shared_mutex> lock(rwMutex_);
+    return runningId_;
+}
+
+void EventPolicyUtils::SetRunningId(const std::string& id)
+{
+    std::unique_lock<std::shared_mutex> lock(rwMutex_);
+    runningId_ = id;
 }
 }  // HiviewDFX
 }  // OHOS

@@ -81,7 +81,7 @@ int ResourceOverlimitPolicy::SetEventPolicy(const std::map<std::string, std::str
         return ErrorCode::HIAPPEVENT_VERIFY_SUCCESSFUL;
     }
     auto conf = configMap;
-    int res = EventPolicyUtils::GetInstance().ConfigPageSwitch("resoupageSwitchLogEnable", conf);
+    int res = EventPolicyUtils::GetInstance().ConfigPageSwitch("RESOURCE_OVERLIMIT", conf);
     if (conf.size() < configMap.size()) {  // whether pageSwitchLogEnable is set.
         if (conf.size() == 0 || res != ErrorCode::HIAPPEVENT_VERIFY_SUCCESSFUL) {
             return res;

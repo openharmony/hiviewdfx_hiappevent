@@ -120,7 +120,7 @@ bool InitDir(const std::string& dirPath)
 int AppCrashPolicy::SetEventPolicy(const std::map<std::string, std::string>& configMap)
 {
     auto conf = configMap;
-    int res = EventPolicyUtils::GetInstance().ConfigPageSwitch("appCrpageSwitchLogEnable", conf);
+    int res = EventPolicyUtils::GetInstance().ConfigPageSwitch("APP_CRASH", conf);
     if (conf.size() < configMap.size()) {  // whether pageSwitchLogEnable is set.
         if (conf.size() == 0 || res != ErrorCode::HIAPPEVENT_VERIFY_SUCCESSFUL) {
             return res;

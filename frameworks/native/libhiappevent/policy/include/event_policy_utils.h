@@ -16,6 +16,7 @@
 #define HIAPPEVENT_FRAMEWORKS_NATIVE_LIB_HIAPPEVENT_POLICY_EVENT_POLICY_UTILS_H
 
 #include <map>
+#include <shared_mutex>
 #include <string>
 
 namespace OHOS {
@@ -26,9 +27,9 @@ public:
     EventPolicyUtils(const EventPolicyUtils&) = delete;
     EventPolicyUtils& operator=(const EventPolicyUtils&) = delete;
 
-    int ConfigPageSwitch(const std::string& key, std::map<std::string, std::string>& configMap);
+    int ConfigPageSwitch(const std::string& eventName, std::map<std::string, std::string>& configMap);
     std::string GetConfigDir(const std::string& subDir);
-    bool GetEventPageSwitchStatus(const std::string& name);
+    bool GetEventPageSwitchStatus(const std::string& eventName);
     int SaveEventConfig(const std::string& configDir, const std::map<std::string, std::string>& configMap);
 
 private:
@@ -36,6 +37,9 @@ private:
     ~EventPolicyUtils() = default;
     bool GetCurSysPageSwitchStatus(const std::string& configDir);
     void RemoveEventConfig(const std::string& configDir, const std::string& property);
+    std::string GetRunningId();
+    void SetRunningId(const std::string& id);
+    std::shared_mutex rwMutex_;
     std::string runningId_;
 };
 }  // HiviewDFX
