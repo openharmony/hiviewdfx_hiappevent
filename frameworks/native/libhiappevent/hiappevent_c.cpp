@@ -72,14 +72,13 @@ ParamList AddParamArrayValue(ParamList list, const char* name, const T* arr, int
     return reinterpret_cast<ParamList>(ndkAppEventPackPtr);
 }
 
-const std::map<int, std::string>& GetFrameworkTypes()
+std::map<int, std::string> GetFrameworkTypes()
 {
-    static const std::map<int, std::string>& frameworkTypeMaps = {
+    return {
         {0, "OH_FLUTTER_DART"},
         {1, "OH_REACT_NATIVE_HERMES"},
         {2, "OH_KMP_KOTLIN"}
     };
-    return frameworkTypeMaps;
 }
 
 void TruncateString(const char* src, std::string& destStr)
@@ -101,7 +100,7 @@ int HiSysEventWriteFrameworkMemAnomaly(enum OH_HiAppEvent_FrameworkType framewor
         { .name = "RUNNING_ID",      .t = HISYSEVENT_STRING,    .arraySize = 0, }
     };
     std::string fwkTypeStr;
-    auto& fwkTypeMaps = GetFrameworkTypes();
+    auto fwkTypeMaps = GetFrameworkTypes();
     auto it = fwkTypeMaps.find(frameworkType);
     if (it != fwkTypeMaps.end()) {
         fwkTypeStr = it->second;
@@ -320,14 +319,14 @@ int HiAppEventSetEventConfig(const char* name, HiAppEvent_Config* config)
 int HiAppEventReportFrameworkMemAnomaly(
     enum OH_HiAppEvent_FrameworkType frameworkType, const char* frameworkVersion, const char* description)
 {
-    static std::atomic<int64_t> g_lastReportTime {0};
-    auto& fwkTypeMaps = GetFrameworkTypes();
+    static std::atomic<int64_t> lastReportTime {0};
+    auto fwkTypeMaps = GetFrameworkTypes();
     if (fwkTypeMaps.count(frameworkType) == 0) {
         HILOG_ERROR(LOG_CORE, "Invalid framework type, framework type is %{public}d", frameworkType);
         return HIAPPEVENT_INVALID_PARAM_VALUE;
     }
     int64_t curTime = TimeUtil::GetElapsedMilliSecondsSinceBoot();
-    int64_t lastTime = g_lastReportTime.load();
+    int64_t lastTime = lastReportTime.load();
     if (curTime < lastTime) {
         HILOG_ERROR(LOG_CORE, "failed to get timestamp");
         return HIAPPEVENT_OPERATE_FAILED;
@@ -347,7 +346,7 @@ int HiAppEventReportFrameworkMemAnomaly(
     list = AddStringParamValue(list, "description", descriptionStr.c_str());
     int ret = HiAppEventInnerWrite("HIVIEWDFX", "FW_MEM_ANOMALY", STATISTIC, list);
     HiAppEventDestroyParamList(list);
-    g_lastReportTime.store(curTime);
+    lastReportTime.store(curTime);
     if (ret < 0) {
         HILOG_WARN(LOG_CORE, "configuration item name is DISABLE, and the value is true; OH_HiAppEvent_Write is"
             " disabled");
