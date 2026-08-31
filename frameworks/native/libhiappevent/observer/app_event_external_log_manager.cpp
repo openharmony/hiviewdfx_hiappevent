@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "app_event_external_log_manager.h"
+#include "parse_log_timestamp.h"
 
 #include <cinttypes>
 #include <cstddef>
@@ -128,7 +129,10 @@ ExternalLogWrapperInfo AppEventExternalLogManager::ParseLogFileInfo(const std::s
         if (len >= MIN_TIMESTAMP_LEN && len <= MAX_TIMESTAMP_LEN &&
             IsTimestampSegment(fileName, end + 1, nextUnderscore)) {
             info.sysEvent = fileName.substr(0, end);
-            info.generationTime = std::stoll(fileName.substr(end + 1, len));
+            int64_t ts = 0;
+            if (ParseLogTimestampInt64(fileName.substr(end + 1, len), ts)) {
+                info.generationTime = ts;
+            }
             break;
         }
         start = end + 1;
